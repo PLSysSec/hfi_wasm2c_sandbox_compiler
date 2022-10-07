@@ -328,9 +328,9 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
 
 #ifdef WASM2C_HFI_ENABLED
   hfi_sandbox* hfi_config = &(memory->hfi_config);
-  *memset(hfi_config, 0, sizeof(hfi_sandbox));
+  memset(hfi_config, 0, sizeof(hfi_sandbox));
   hfi_config->is_trusted_sandbox = true;
-  hfi_config->data_ranges[0].base_address = memory->data;
+  hfi_config->data_ranges[0].base_address = (uintptr_t) memory->data;
   // wasm page size is a multiple of 64k, so this satisfies the hfi constraint that size has to be a multiple of 64k
   hfi_config->data_ranges[0].offset_limit = memory->size;
   hfi_config->data_ranges[0].readable = true;

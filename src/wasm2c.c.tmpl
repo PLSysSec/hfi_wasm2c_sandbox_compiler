@@ -4,6 +4,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+
+%%declarations
+
 #ifdef WASM2C_HFI_ENABLED
 #include "hfi.h"
 #endif
@@ -93,7 +96,7 @@ void WASM2C_MALLOC_FAIL_CALLBACK(u32 ptr_size);
 #  define WASM2C_SHADOW_MEMORY_MARK_GLOBALS_HEAP_BOUNDARY(mem, ptr)
 #endif
 
-#ifdef WASM_USE_GUARD_PAGES || WASM2C_HFI_ENABLED
+#if defined(WASM_USE_GUARD_PAGES) || defined(WASM2C_HFI_ENABLED)
 #  define MEMCHECK(mem, a, t)
 #else
 #  define MEMCHECK(mem, a, t) if (UNLIKELY((a) + sizeof(t) > mem->size)) { (void) TRAP(OOB); }
@@ -153,7 +156,7 @@ static inline void load_data(void *dest, const void *src, size_t n) {
   static inline void name(wasm_rt_memory_t* mem, u64 addr, wasmrep_t value, const char* func_name) { \
     MEMCHECK(mem, addr, act_t);                                                                      \
     act_t wrapped = (act_t)value;                                                                    \
-    hfi_hmov1_store_##act_t(addr, &wrapped);                                                         \
+    hfi_hmov1_store_##act_t(addr, wrapped);                                                         \
     WASM2C_SHADOW_MEMORY_STORE(mem, func_name, addr, sizeof(act_t));                                 \
   }
 #endif

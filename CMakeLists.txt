@@ -353,6 +353,7 @@ set(WABT_LIBRARY_SRC
 add_library(wabt STATIC ${WABT_LIBRARY_SRC})
 
 add_library(wasm-rt-impl STATIC SHARED wasm2c/wasm-rt-impl.c wasm2c/wasm-rt-os-unix.c wasm2c/wasm-rt-os-win.c wasm2c/wasm-rt-wasi.c)
+target_include_directories(wasm-rt-impl PUBLIC ${CMAKE_SOURCE_DIR}/../hw_isol_gem5/tests/test-progs/hfi/)
 install(TARGETS wasm-rt-impl DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES wasm2c/wasm-rt.h wasm2c/wasm-rt-impl.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
@@ -489,6 +490,7 @@ endif()
     LIBS ${LDL_LIB} -luv uvwasi_a
     INSTALL
   )
+  target_include_directories(wasm2c-runner PUBLIC ${CMAKE_SOURCE_DIR}/../hw_isol_gem5/tests/test-progs/hfi/)
 
   # wasm-opcodecnt
   wabt_executable(

@@ -19,7 +19,7 @@ UVWASI_PATH=$(WABT_ROOT)/third_party/uvwasi
 
 DEPS=-I$(UVWASI_PATH)/include -L$(WABT_ROOT)/build/_deps/libuv-build -L$(WABT_ROOT)/build/third_party/uvwasi
 
-LIBS=-luvwasi_a -luv_a -lpthread
+LIBS=-luvwasi_a -luv -lpthread
 
 ALL_RESULTS=hello.wasm hello.wasm.c hello.so
 

@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "wasm-rt.h"
+#include "uvwasi.h"
 
 #if defined(_WIN32)
 // Ensure the min/max macro in the header doesn't collide with functions in
@@ -93,6 +94,42 @@ char* get_info_func_name(char const* wasm_module_name) {
 typedef wasm2c_sandbox_funcs_t (*get_info_func_t)();
 typedef void (*wasm2c_start_func_t)(void* sbx);
 
+void init_uvwasi_local(uvwasi_t * local_uvwasi_state, int argc, char const * argv[])
+{
+    uvwasi_options_t init_options;
+
+    //pass in standard descriptors
+    init_options.in = 0;
+    init_options.out = 1;
+    init_options.err = 2;
+    init_options.fd_table_size = 3;
+
+    //pass in args and environement
+    extern const char ** environ;
+    init_options.argc = argc;
+    init_options.argv = argv;
+    init_options.envp = (const char **) environ;
+
+    //no sandboxing enforced, binary has access to everything user does
+    init_options.preopenc = 2;
+    init_options.preopens = calloc(2, sizeof(uvwasi_preopen_t));
+
+    init_options.preopens[0].mapped_path = "/";
+    init_options.preopens[0].real_path = "/";
+    init_options.preopens[1].mapped_path = "./";
+    init_options.preopens[1].real_path = ".";
+
+    init_options.allocator = NULL;
+
+    uvwasi_errno_t ret = uvwasi_init(local_uvwasi_state, &init_options);
+
+    if (ret != UVWASI_ESUCCESS) {
+        printf("uvwasi_init failed with error %d\n", ret);
+        exit(1);
+    }
+}
+
+
 int main(int argc, char const* argv[]) {
   if (argc < 2) {
     printf(
@@ -122,6 +159,10 @@ int main(int argc, char const* argv[]) {
     printf("Error: Could not create sandbox" LINETERM);
     exit(1);
   }
+
+  uvwasi_t local_uvwasi_state;
+  init_uvwasi_local(&local_uvwasi_state, argc, argv);
+  sandbox_info.init_uvwasi_state(sandbox, &local_uvwasi_state);
 
   wasm2c_start_func_t start_func =
       (wasm2c_start_func_t)symbol_lookup(library, "w2c__start");

@@ -4,6 +4,8 @@ const char SECTION_NAME(includes)[] =
 "#include <math.h>\n"
 "#include <string.h>\n"
 "#include <stdlib.h>\n"
+"#include \"uvwasi.h\"\n"
+"\n"
 ;
 
 const char SECTION_NAME(declarations)[] =
@@ -416,11 +418,17 @@ const char SECTION_NAME(sandboxapis)[] =
 "  free(sbx);\n"
 "}\n"
 "\n"
+"static void init_uvwasi_state(void* aSbx, uvwasi_t * uvwasi_p) {\n"
+"  wasm2c_sandbox_t* const sbx = (wasm2c_sandbox_t* const) aSbx;\n"
+"  sbx->wasi_data.uvwasi = uvwasi_p;\n"
+"}\n"
+"\n"
 "FUNC_EXPORT wasm2c_sandbox_funcs_t WASM_CURR_ADD_PREFIX(get_wasm2c_sandbox_info)() {\n"
 "  wasm2c_sandbox_funcs_t ret;\n"
 "  ret.wasm_rt_sys_init = &wasm_rt_sys_init;\n"
 "  ret.create_wasm2c_sandbox = &create_wasm2c_sandbox;\n"
 "  ret.destroy_wasm2c_sandbox = &destroy_wasm2c_sandbox;\n"
+"  ret.init_uvwasi_state = &init_uvwasi_state;\n"
 "  ret.lookup_wasm2c_nonfunc_export = &lookup_wasm2c_nonfunc_export;\n"
 "  ret.lookup_wasm2c_func_index = &lookup_wasm2c_func_index;\n"
 "  ret.add_wasm2c_callback = &add_wasm2c_callback;\n"

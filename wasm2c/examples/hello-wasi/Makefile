@@ -13,7 +13,7 @@ WASM_CFLAGS=-Wl,--export-all
 WASM2C=$(WABT_ROOT)/bin/wasm2c
 
 WASM2C_RUNTIME_PATH=$(WABT_ROOT)/wasm2c/
-WASM2C_RUNTIME_FILES=$(addprefix $(WASM2C_RUNTIME_PATH), wasm-rt-impl.c wasm-rt-os-unix.c wasm-rt-wasi.c)
+WASM2C_RUNTIME_FILES=$(addprefix $(WASM2C_RUNTIME_PATH), wasm-rt-impl.c wasm-rt-os-unix.c uvwasi-rt.c)
 
 UVWASI_PATH=$(WABT_ROOT)/third_party/uvwasi
 

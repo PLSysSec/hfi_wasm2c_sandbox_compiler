@@ -22,6 +22,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// This wasm2c always assume hfi is enabled
+#define WASM2C_HFI_ENABLED
+
 #ifdef WASM2C_HFI_ENABLED
 #include "hfi.h"
 #endif

@@ -44,14 +44,18 @@ extern "C" {
 #define WASM_RT_MAX_CALL_STACK_DEPTH 500
 #endif
 
+#if !defined(WASM2C_HFI_ENABLED) && !defined(WASM2C_HFI_DISABLED)
+#error "HFI status not specified in wasm2c"
+#endif
+
 /** Check if we should use guard page model.
  * This is enabled by default unless WASM_USE_EXPLICIT_BOUNDS_CHECKS is defined.
  */
-#if defined(WASM_USE_GUARD_PAGES) && defined(WASM_USE_EXPLICIT_BOUNDS_CHECKS)
-#error \
-    "Cannot define both WASM_USE_GUARD_PAGES and WASM_USE_EXPLICIT_BOUNDS_CHECKS"
-#elif !defined(WASM_USE_GUARD_PAGES) && \
-    !defined(WASM_USE_EXPLICIT_BOUNDS_CHECKS)
+#if (defined(WASM_USE_GUARD_PAGES) && defined(WASM_USE_EXPLICIT_BOUNDS_CHECKS)) || (defined(WASM_USE_GUARD_PAGES) && defined(WASM2C_HFI_ENABLED)) || (defined(WASM2C_HFI_ENABLED) && defined(WASM_USE_EXPLICIT_BOUNDS_CHECKS))
+
+#error "Cannot define multiple in WASM_USE_GUARD_PAGES, WASM_USE_EXPLICIT_BOUNDS_CHECKS, WASM2C_HFI_ENABLED"
+
+#elif !defined(WASM_USE_GUARD_PAGES) && !defined(WASM_USE_EXPLICIT_BOUNDS_CHECKS) && !defined(WASM2C_HFI_ENABLED)
 // default to guard pages
 #define WASM_USE_GUARD_PAGES
 #endif

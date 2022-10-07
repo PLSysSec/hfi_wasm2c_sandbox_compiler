@@ -3,6 +3,11 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+
+#ifdef WASM2C_HFI_ENABLED
+#include "hfi.h"
+#endif
+
 %%declarations
 #if defined(_MSC_VER)
 #  define UNLIKELY(x) (x)
@@ -86,7 +91,7 @@ void WASM2C_MALLOC_FAIL_CALLBACK(u32 ptr_size);
 #  define WASM2C_SHADOW_MEMORY_MARK_GLOBALS_HEAP_BOUNDARY(mem, ptr)
 #endif
 
-#ifdef WASM_USE_GUARD_PAGES
+#ifdef WASM_USE_GUARD_PAGES || WASM2C_HFI_ENABLED
 #  define MEMCHECK(mem, a, t)
 #else
 #  define MEMCHECK(mem, a, t) if (UNLIKELY((a) + sizeof(t) > mem->size)) { (void) TRAP(OOB); }
@@ -99,43 +104,15 @@ void WASM2C_MALLOC_FAIL_CALLBACK(u32 ptr_size);
 #  define MEM_ACCESS_REF(mem, addr) &mem->data[addr]
 #endif
 
-#if defined(WASM_USING_GLOBAL_HEAP)
+#if defined(WASM_USING_GLOBAL_HEAP) || defined(WASM2C_HFI_ENABLED)
 #  undef MEM_ACCESS_REF
 #  define MEM_ACCESS_REF(mem, addr) (char*) addr
 #endif
 
 #if WABT_BIG_ENDIAN
-static inline void load_data(void *dest, const void *src, size_t n) {
-  size_t i = 0;
-  u8 *dest_chars = dest;
-  memcpy(dest, src, n);
-  for (i = 0; i < (n>>1); i++) {
-    u8 cursor = dest_chars[i];
-    dest_chars[i] = dest_chars[n - i - 1];
-    dest_chars[n - i - 1] = cursor;
-  }
-}
-#define LOAD_DATA(m, o, i, s) { load_data(&(m.data[m.size - o - s]), i, s); \
-  WASM2C_SHADOW_MEMORY_RESERVE(&m, m.size - o - s, s);                       \
-  WASM2C_SHADOW_MEMORY_STORE(&m, "GlobalDataLoad", m.size - o - s, s);       \
-}
 
-#define DEFINE_LOAD(name, t1, t2, t3)                                                      \
-  static inline t3 name(wasm_rt_memory_t* mem, u64 addr, const char* func_name) {          \
-    MEMCHECK(mem, addr, t1);                                                               \
-    t1 result;                                                                             \
-    memcpy(&result, MEM_ACCESS_REF(mem, mem->size - addr - sizeof(t1)), sizeof(t1));       \
-    WASM2C_SHADOW_MEMORY_LOAD(mem, func_name, mem->size - addr - sizeof(t1), sizeof(t1));  \
-    return (t3)(t2)result;                                                                 \
-  }
+#error "Unsupported"
 
-#define DEFINE_STORE(name, t1, t2)                                                            \
-  static inline void name(wasm_rt_memory_t* mem, u64 addr, t2 value, const char* func_name) { \
-    MEMCHECK(mem, addr, t1);                                                                  \
-    t1 wrapped = (t1)value;                                                                   \
-    memcpy(MEM_ACCESS_REF(mem, mem->size - addr - sizeof(t1), &wrapped, sizeof(t1));          \
-    WASM2C_SHADOW_MEMORY_STORE(mem, func_name, mem->size - addr - sizeof(t1)), sizeof(t1));   \
-  }
 #else
 static inline void load_data(void *dest, const void *src, size_t n) {
   memcpy(dest, src, n);
@@ -145,22 +122,50 @@ static inline void load_data(void *dest, const void *src, size_t n) {
   WASM2C_SHADOW_MEMORY_STORE(&m, "GlobalDataLoad", o, s);       \
 }
 
-#define DEFINE_LOAD(name, t1, t2, t3)                                               \
-  static inline t3 name(wasm_rt_memory_t* mem, u64 addr, const char* func_name) {   \
-    MEMCHECK(mem, addr, t1);                                                        \
-    t1 result;                                                                      \
-    memcpy(&result, MEM_ACCESS_REF(mem, addr), sizeof(t1));                         \
-    WASM2C_SHADOW_MEMORY_LOAD(mem, func_name, addr, sizeof(t1));                    \
-    return (t3)(t2)result;                                                          \
+#define DEFINE_NONHFI_LOAD(name, act_t, signed_wasmrep_t, wasmrep_t)                            \
+  static inline wasmrep_t name(wasm_rt_memory_t* mem, u64 addr, const char* func_name) { \
+    MEMCHECK(mem, addr, act_t);                                                          \
+    act_t result;                                                                        \
+    memcpy(&result, MEM_ACCESS_REF(mem, addr), sizeof(act_t));                           \
+    WASM2C_SHADOW_MEMORY_LOAD(mem, func_name, addr, sizeof(act_t));                      \
+    return (wasmrep_t)(signed_wasmrep_t)result;                                          \
   }
 
-#define DEFINE_STORE(name, t1, t2)                                                            \
-  static inline void name(wasm_rt_memory_t* mem, u64 addr, t2 value, const char* func_name) { \
-    MEMCHECK(mem, addr, t1);                                                                  \
-    t1 wrapped = (t1)value;                                                                   \
-    memcpy(MEM_ACCESS_REF(mem, addr), &wrapped, sizeof(t1));                                  \
-    WASM2C_SHADOW_MEMORY_STORE(mem, func_name, addr, sizeof(t1));                             \
+#define DEFINE_NONHFI_STORE(name, act_t, wasmrep_t)                                                         \
+  static inline void name(wasm_rt_memory_t* mem, u64 addr, wasmrep_t value, const char* func_name) { \
+    MEMCHECK(mem, addr, act_t);                                                                      \
+    act_t wrapped = (act_t)value;                                                                    \
+    memcpy(MEM_ACCESS_REF(mem, addr), &wrapped, sizeof(act_t));                                      \
+    WASM2C_SHADOW_MEMORY_STORE(mem, func_name, addr, sizeof(act_t));                                 \
   }
+
+#define DEFINE_HFI_LOAD(name, act_t, signed_wasmrep_t, wasmrep_t)                        \
+  static inline wasmrep_t name(wasm_rt_memory_t* mem, u64 addr, const char* func_name) { \
+    MEMCHECK(mem, addr, act_t);                                                          \
+    act_t result = hfi_hmov1_load_##act_t(addr);                                         \
+    WASM2C_SHADOW_MEMORY_LOAD(mem, func_name, addr, sizeof(act_t));                      \
+    return (wasmrep_t)(signed_wasmrep_t)result;                                          \
+  }
+
+#define DEFINE_HFI_STORE(name, act_t, wasmrep_t)                                                     \
+  static inline void name(wasm_rt_memory_t* mem, u64 addr, wasmrep_t value, const char* func_name) { \
+    MEMCHECK(mem, addr, act_t);                                                                      \
+    act_t wrapped = (act_t)value;                                                                    \
+    hfi_hmov1_store_##act_t(addr, &wrapped);                                                         \
+    WASM2C_SHADOW_MEMORY_STORE(mem, func_name, addr, sizeof(act_t));                                 \
+  }
+#endif
+
+#ifdef WASM2C_HFI_ENABLED
+
+#define DEFINE_LOAD DEFINE_HFI_LOAD
+#define DEFINE_STORE DEFINE_HFI_STORE
+
+#else
+
+#define DEFINE_LOAD DEFINE_NONHFI_LOAD
+#define DEFINE_STORE DEFINE_NONHFI_STORE
+
 #endif
 
 DEFINE_LOAD(i32_load, u32, u32, u32);

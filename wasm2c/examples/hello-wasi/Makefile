@@ -40,5 +40,3 @@ hello.so: hello.wasm.c $(WASM2C_RUNTIME_FILES)
 run: hello.so
 	$(WASM2C_RUNNER) $(PWD)/hello.so
 
-#hello.elf: hello.wasm.c  uvwasi-rt-main.c $(WASM2C_RUNTIME_FILES)
-#	$(CC) -g hello.wasm.c uvwasi-rt-main.c -o hello.elf -I$(WASM2C_RUNTIME_PATH) $(WASM2C_RUNTIME_FILES) $(DEPS) $(LIBS)

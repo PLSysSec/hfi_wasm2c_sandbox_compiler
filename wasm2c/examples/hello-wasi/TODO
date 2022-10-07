@@ -1,0 +1,7 @@
+change function names
+create uvwasi state and init in a sensible way.
+
+
+***
+-address any XXX or TODO lines
+-make sure linear memory accesses are bounded checked

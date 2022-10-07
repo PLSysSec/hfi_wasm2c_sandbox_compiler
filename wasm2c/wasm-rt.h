@@ -22,6 +22,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef WASM2C_HFI_ENABLED
+#include "hfi.h"
+#endif
+
 #if defined(_WIN32)
 #define WASM2C_FUNC_EXPORT __declspec(dllexport)
 #else
@@ -162,6 +166,9 @@ typedef struct {
 #if defined(WASM_CHECK_SHADOW_MEMORY)
   wasm2c_shadow_memory_t shadow_memory;
 #endif
+#ifdef WASM2C_HFI_ENABLED
+  hfi_sandbox hfi_config;
+#endif
 } wasm_rt_memory_t;
 
 /** A Table object. */
@@ -217,6 +224,7 @@ typedef uint32_t (*add_wasm2c_callback_t)(
     void* func_ptr,
     wasm_rt_elem_target_class_t func_class);
 typedef void (*remove_wasm2c_callback_t)(void* sbx_ptr, uint32_t callback_idx);
+typedef wasm_rt_memory_t* (*get_wasm2c_memory_t)(void* sbx_ptr);
 
 typedef struct wasm2c_sandbox_funcs_t {
   wasm_rt_sys_init_t wasm_rt_sys_init;
@@ -226,6 +234,7 @@ typedef struct wasm2c_sandbox_funcs_t {
   lookup_wasm2c_func_index_t lookup_wasm2c_func_index;
   add_wasm2c_callback_t add_wasm2c_callback;
   remove_wasm2c_callback_t remove_wasm2c_callback;
+  get_wasm2c_memory_t get_wasm2c_memory;
 } wasm2c_sandbox_funcs_t;
 
 /** Stop execution immediately and jump back to the call to `wasm_rt_try`.
@@ -304,6 +313,13 @@ extern void wasm_rt_deallocate_memory(wasm_rt_memory_t*);
  *    }
  *  ``` */
 extern uint32_t wasm_rt_grow_memory(wasm_rt_memory_t*, uint32_t pages);
+
+#ifdef WASM2C_HFI_ENABLED
+
+#define wasm_rt_hfi_enable(memory) { hfi_set_sandbox_metadata(&(memory->hfi_config)); hfi_enter_sandbox(); }
+#define wasm_rt_hfi_disable() { hfi_exit_sandbox(); }
+
+#endif
 
 /** Initialize a Table object with an element count of `elements` and a maximum
  * page size of `max_elements`.

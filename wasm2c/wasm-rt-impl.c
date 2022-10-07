@@ -203,8 +203,15 @@ static int is_power_of_two(uint64_t x) {
 #define WASM_PAGE_SIZE 65536
 
 #if UINTPTR_MAX == 0xffffffffffffffff
+
+#ifdef WASM2C_HFI_ENABLED
+// Guard page of 4GiB
+#define WASM_HEAP_GUARD_PAGE_SIZE 0
+#else
 // Guard page of 4GiB
 #define WASM_HEAP_GUARD_PAGE_SIZE 0x100000000ull
+#endif
+
 // Heap aligned to 4GB
 #define WASM_HEAP_ALIGNMENT 0x100000000ull
 // By default max heap is 4GB
@@ -318,6 +325,20 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
 #if defined(WASM_CHECK_SHADOW_MEMORY)
   wasm2c_shadow_memory_create(memory);
 #endif
+
+#ifdef WASM2C_HFI_ENABLED
+  hfi_sandbox* hfi_config = &(memory->hfi_config);
+  *memset(hfi_config, 0, sizeof(hfi_sandbox));
+  hfi_config->is_trusted_sandbox = true;
+  hfi_config->data_ranges[0].base_address = memory->data;
+  // wasm page size is a multiple of 64k, so this satisfies the hfi constraint that size has to be a multiple of 64k
+  hfi_config->data_ranges[0].offset_limit = memory->size;
+  hfi_config->data_ranges[0].readable = true;
+  hfi_config->data_ranges[0].writeable = true;
+  hfi_config->data_ranges[0].range_size_type = (uint8_t) HFI_RANGE_SIZE_TYPE_LARGE;
+  // TODO: code range
+#endif
+
   return true;
 }
 
@@ -379,6 +400,14 @@ uint32_t wasm_rt_grow_memory(wasm_rt_memory_t* memory, uint32_t delta) {
 #if defined(WASM_CHECK_SHADOW_MEMORY)
   wasm2c_shadow_memory_expand(memory);
 #endif
+
+#ifdef WASM2C_HFI_ENABLED
+  hfi_sandbox* hfi_config = &(memory->hfi_config);
+  // wasm page size is a multiple of 64k, so this satisfies the hfi constraint that size has to be a multiple of 64k
+  hfi_config->data_ranges[0].offset_limit = memory->size;
+  hfi_set_sandbox_metadata(hfi_config);
+#endif
+
   return old_pages;
 }
 

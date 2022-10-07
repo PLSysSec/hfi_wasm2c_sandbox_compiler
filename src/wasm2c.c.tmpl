@@ -425,5 +425,6 @@ FUNC_EXPORT wasm2c_sandbox_funcs_t WASM_CURR_ADD_PREFIX(get_wasm2c_sandbox_info)
   ret.lookup_wasm2c_func_index = &lookup_wasm2c_func_index;
   ret.add_wasm2c_callback = &add_wasm2c_callback;
   ret.remove_wasm2c_callback = &remove_wasm2c_callback;
+  ret.get_wasm2c_memory = &get_wasm2c_memory;
   return ret;
 }

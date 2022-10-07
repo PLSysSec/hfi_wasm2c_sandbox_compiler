@@ -1287,6 +1287,11 @@ void CWriter::WriteDataInitializers() {
   Write(Newline(), "static void cleanup_memory(wasm2c_sandbox_t* const sbx) ", OpenBrace());
   Write("wasm_rt_deallocate_memory(&(sbx->", ExternalRef(memory->name), "));", Newline());
   Write(CloseBrace(), Newline());
+
+  Write(Newline(), "static void get_wasm2c_memory(void* aSbx) ", OpenBrace());
+  Write("wasm2c_sandbox_t* const sbx = (wasm2c_sandbox_t* const) aSbx;");
+  Write("return &(sbx->", ExternalRef(memory->name), ");", Newline());
+  Write(CloseBrace(), Newline());
 }
 
 void CWriter::WriteElemInitializers() {

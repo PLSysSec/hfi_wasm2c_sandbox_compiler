@@ -8,6 +8,8 @@
 #include "hfi.h"
 #endif
 
+#include "uvwasi.h"
+
 %%declarations
 #if defined(_MSC_VER)
 #  define UNLIKELY(x) (x)
@@ -416,11 +418,17 @@ static void destroy_wasm2c_sandbox(void* aSbx) {
   free(sbx);
 }
 
+static void init_uvwasi_state(void* aSbx, uvwasi_t * uvwasi_p) {
+  wasm2c_sandbox_t* const sbx = (wasm2c_sandbox_t* const) aSbx;
+  sbx->wasi_data.uvwasi = uvwasi_p;
+}
+
 FUNC_EXPORT wasm2c_sandbox_funcs_t WASM_CURR_ADD_PREFIX(get_wasm2c_sandbox_info)() {
   wasm2c_sandbox_funcs_t ret;
   ret.wasm_rt_sys_init = &wasm_rt_sys_init;
   ret.create_wasm2c_sandbox = &create_wasm2c_sandbox;
   ret.destroy_wasm2c_sandbox = &destroy_wasm2c_sandbox;
+  ret.init_uvwasi_state = &init_uvwasi_state;
   ret.lookup_wasm2c_nonfunc_export = &lookup_wasm2c_nonfunc_export;
   ret.lookup_wasm2c_func_index = &lookup_wasm2c_func_index;
   ret.add_wasm2c_callback = &add_wasm2c_callback;

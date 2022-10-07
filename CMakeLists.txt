@@ -367,6 +367,8 @@ endif ()
 
 if (BUILD_UVWASI)
     add_subdirectory("third_party/uvwasi" )
+    include_directories(third_party/uvwasi/include)
+    link_directories(third_party/uvwasi)
 endif ()
 
 # libwasm, which implenents the wasm C API
@@ -484,7 +486,7 @@ endif()
   wabt_executable(
     NAME wasm2c-runner
     SOURCES wasm2c/wasm-rt-runner.c
-    LIBS ${LDL_LIB}
+    LIBS ${LDL_LIB} -luv uvwasi_a
     INSTALL
   )
 

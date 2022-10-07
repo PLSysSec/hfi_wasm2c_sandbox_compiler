@@ -39,7 +39,7 @@ void wasm_rt_cleanup_wasi(wasm_sandbox_wasi_data* wasi_data) {
 
 typedef uint32_t wasm_ptr;
 
-uint32_t Z_wasi_snapshot_preview1Z_fd_prestat_get(wasm_sandbox_wasi_data* wp, uint32_t fd, wasm_ptr buf)
+uint32_t Z_wasi_snapshot_preview1Z_fd_prestat_getZ_iii(wasm_sandbox_wasi_data* wp, uint32_t fd, wasm_ptr buf)
 {
     uvwasi_prestat_t prestat;
     uvwasi_errno_t ret = uvwasi_fd_prestat_get(wp->uvwasi, fd, &prestat);
@@ -51,13 +51,13 @@ uint32_t Z_wasi_snapshot_preview1Z_fd_prestat_get(wasm_sandbox_wasi_data* wp, ui
 }
 
 
-uint32_t Z_wasi_snapshot_preview1Z_fd_prestat_dir_name(wasm_sandbox_wasi_data* wp, uint32_t fd, wasm_ptr path, uint32_t path_len)
+uint32_t Z_wasi_snapshot_preview1Z_fd_prestat_dir_nameZ_iiii(wasm_sandbox_wasi_data* wp, uint32_t fd, wasm_ptr path, uint32_t path_len)
 {
     uvwasi_errno_t ret = uvwasi_fd_prestat_dir_name(wp->uvwasi, fd, (char*)MEMACCESS(path), path_len);
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_environ_sizes_get(wasm_sandbox_wasi_data* wp, wasm_ptr env_count, wasm_ptr env_buf_size)
+uint32_t Z_wasi_snapshot_preview1Z_environ_sizes_getZ_iii(wasm_sandbox_wasi_data* wp, wasm_ptr env_count, wasm_ptr env_buf_size)
 {
     uvwasi_size_t uvcount;
     uvwasi_size_t uvbufsize;
@@ -69,7 +69,7 @@ uint32_t Z_wasi_snapshot_preview1Z_environ_sizes_get(wasm_sandbox_wasi_data* wp,
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_environ_get(wasm_sandbox_wasi_data* wp, wasm_ptr env, wasm_ptr buf)
+uint32_t Z_wasi_snapshot_preview1Z_environ_getZ_iii(wasm_sandbox_wasi_data* wp, wasm_ptr env, wasm_ptr buf)
 {
     uvwasi_size_t uvcount;
     uvwasi_size_t uvbufsize;
@@ -103,7 +103,7 @@ uint32_t Z_wasi_snapshot_preview1Z_environ_get(wasm_sandbox_wasi_data* wp, wasm_
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_args_sizes_get(wasm_sandbox_wasi_data* wp, wasm_ptr argc, wasm_ptr argv_buf_size)
+uint32_t Z_wasi_snapshot_preview1Z_args_sizes_getZ_iii(wasm_sandbox_wasi_data* wp, wasm_ptr argc, wasm_ptr argv_buf_size)
 {
     uvwasi_size_t uvcount;
     uvwasi_size_t uvbufsize;
@@ -115,7 +115,7 @@ uint32_t Z_wasi_snapshot_preview1Z_args_sizes_get(wasm_sandbox_wasi_data* wp, wa
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_args_get(wasm_sandbox_wasi_data* wp, wasm_ptr argv, wasm_ptr buf)
+uint32_t Z_wasi_snapshot_preview1Z_args_getZ_iii(wasm_sandbox_wasi_data* wp, wasm_ptr argv, wasm_ptr buf)
 {
     uvwasi_size_t uvcount;
     uvwasi_size_t uvbufsize;
@@ -149,7 +149,7 @@ uint32_t Z_wasi_snapshot_preview1Z_args_get(wasm_sandbox_wasi_data* wp, wasm_ptr
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_fd_fdstat_get(wasm_sandbox_wasi_data* wp, uint32_t fd, wasm_ptr stat)
+uint32_t Z_wasi_snapshot_preview1Z_fd_fdstat_getZ_iii(wasm_sandbox_wasi_data* wp, uint32_t fd, wasm_ptr stat)
 {
     uvwasi_fdstat_t uvstat;
     uvwasi_errno_t ret = uvwasi_fd_fdstat_get(wp->uvwasi, fd, &uvstat);
@@ -285,7 +285,7 @@ uint32_t Z_wasi_snapshot_preview1Z_fd_advise(wasm_sandbox_wasi_data* wp, uint32_
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_path_open(wasm_sandbox_wasi_data* wp, uint32_t dirfd, uint32_t dirflags,
+uint32_t Z_wasi_snapshot_preview1Z_path_openZ_iiiiiijjii(wasm_sandbox_wasi_data* wp, uint32_t dirfd, uint32_t dirflags,
                                                     wasm_ptr path, uint32_t path_len,
                                                     uint32_t oflags, uint64_t fs_rights_base, uint64_t fs_rights_inheriting,
                                                     uint32_t fs_flags, wasm_ptr fd)
@@ -305,7 +305,7 @@ uint32_t Z_wasi_snapshot_preview1Z_path_open(wasm_sandbox_wasi_data* wp, uint32_
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_fd_close(wasm_sandbox_wasi_data* wp, uint32_t fd)
+uint32_t Z_wasi_snapshot_preview1Z_fd_closeZ_ii(wasm_sandbox_wasi_data* wp, uint32_t fd)
 {
     uvwasi_errno_t ret = uvwasi_fd_close(wp->uvwasi, fd);
     return ret;
@@ -335,7 +335,7 @@ uint32_t Z_wasi_snapshot_preview1Z_path_link(wasm_sandbox_wasi_data* wp, uint32_
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_path_unlink_file(wasm_sandbox_wasi_data* wp, uint32_t fd, wasm_ptr path, uint32_t path_len)
+uint32_t Z_wasi_snapshot_preview1Z_path_unlink_fileZ_iiii(wasm_sandbox_wasi_data* wp, uint32_t fd, wasm_ptr path, uint32_t path_len)
 {
     uvwasi_errno_t ret = uvwasi_path_unlink_file(wp->uvwasi, fd, (char*)MEMACCESS(path), path_len);
     return ret;
@@ -376,7 +376,7 @@ typedef struct wasi_iovec_t
     uvwasi_size_t buf_len;
 } wasi_iovec_t;
 
-uint32_t Z_wasi_snapshot_preview1Z_fd_write(wasm_sandbox_wasi_data* wp, uint32_t fd, wasm_ptr iovs_offset, uint32_t iovs_len, wasm_ptr nwritten)
+uint32_t Z_wasi_snapshot_preview1Z_fd_writeZ_iiiii(wasm_sandbox_wasi_data* wp, uint32_t fd, wasm_ptr iovs_offset, uint32_t iovs_len, wasm_ptr nwritten)
 {
     wasi_iovec_t * wasi_iovs = (wasi_iovec_t *)MEMACCESS(iovs_offset);
 

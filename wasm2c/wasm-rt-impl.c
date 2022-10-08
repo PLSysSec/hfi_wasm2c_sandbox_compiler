@@ -337,6 +337,7 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
   hfi_config->data_ranges[0].writeable = true;
   hfi_config->data_ranges[0].range_size_type = (uint8_t) HFI_RANGE_SIZE_TYPE_LARGE;
   // TODO: code range
+  hfi_config->code_ranges[0].executable = true;
 #endif
 
   return true;

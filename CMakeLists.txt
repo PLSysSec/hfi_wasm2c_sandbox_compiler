@@ -73,6 +73,22 @@ option(WERROR "Build with warnings as errors" OFF)
 # WASI support is still a work in progress.
 # Only a handful of syscalls are supported at this point.
 option(WITH_WASI "Build WASI support via uvwasi" OFF)
+option(HFI_ENABLED "Build with HFI support. Either HFI_ENABLED or HFI_DISABLED must be set." OFF)
+option(HFI_DISABLED "Build without HFI support. Either HFI_ENABLED or HFI_DISABLED must be set." OFF)
+
+if (HFI_ENABLED)
+  if(HFI_DISABLED)
+    message(FATAL_ERROR "Either HFI_ENABLED or HFI_DISABLED must be set!")
+  endif()
+  add_compile_definitions(WASM2C_HFI_ENABLED)
+elseif (HFI_DISABLED)
+  if (HFI_ENABLED)
+    message(FATAL_ERROR "Either HFI_ENABLED or HFI_DISABLED must be set!")
+  endif()
+  add_compile_definitions(WASM2C_HFI_ENABLED)
+else()
+  message(FATAL_ERROR "One of HFI_ENABLED or HFI_DISABLED must be set!")
+endif()
 
 if (MSVC)
   set(COMPILER_IS_CLANG 0)

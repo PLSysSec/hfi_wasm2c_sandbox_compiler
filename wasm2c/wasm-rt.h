@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include "uvwasi.h"
 
-#ifdef WASM2C_HFI_ENABLED
+#ifdef WASM_USE_HFI
 #include "hfi.h"
 #endif
 
@@ -49,26 +49,44 @@ extern "C" {
 #define WASM_RT_MAX_CALL_STACK_DEPTH 500
 #endif
 
-#if !defined(WASM2C_HFI_ENABLED) && !defined(WASM2C_HFI_DISABLED)
-#error "HFI status not specified in wasm2c"
+// One of the following has to be defined
+//
+// WASM_USE_GUARD_PAGES
+// WASM_USE_BOUNDS_CHECKS
+// WASM_USE_HFI
+// WASM_USE_MASKING
+
+#if !defined(WASM_USE_GUARD_PAGES) && !defined(WASM_USE_BOUNDS_CHECKS) && !defined(WASM_USE_MASKING) && !defined(WASM_USE_HFI)
+
+#error "Must define one of [WASM_USE_GUARD_PAGES, WASM_USE_BOUNDS_CHECKS, WASM_USE_MASKING, WASM_USE_HFI]"
+
+#elif defined(WASM_USE_HFI) && (defined(WASM_USE_GUARD_PAGES) || defined(WASM_USE_BOUNDS_CHECKS) || defined(WASM_USE_MASKING))
+
+#error "Cannot define multiple in [WASM_USE_GUARD_PAGES, WASM_USE_BOUNDS_CHECKS, WASM_USE_MASKING, WASM_USE_HFI]"
+
+// To irritating to check all combinations, but only one of the above should be defined
+
 #endif
 
-/** Check if we should use guard page model.
- * This is enabled by default unless WASM_USE_EXPLICIT_BOUNDS_CHECKS is defined.
- */
-#if (defined(WASM_USE_GUARD_PAGES) && defined(WASM_USE_EXPLICIT_BOUNDS_CHECKS)) || (defined(WASM_USE_GUARD_PAGES) && defined(WASM2C_HFI_ENABLED)) || (defined(WASM2C_HFI_ENABLED) && defined(WASM_USE_EXPLICIT_BOUNDS_CHECKS))
+// One of the following memory allocation strategies need to be used
+//
+// WASM_USE_MMAP
+// WASM_USE_MALLOC_IMMOVABLE
+// WASM_USE_MALLOC_MOVABLE
+//
+// defaults to WASM_USE_MMAP
 
-#error "Cannot define multiple in WASM_USE_GUARD_PAGES, WASM_USE_EXPLICIT_BOUNDS_CHECKS, WASM2C_HFI_ENABLED"
-
-#elif !defined(WASM_USE_GUARD_PAGES) && !defined(WASM_USE_EXPLICIT_BOUNDS_CHECKS) && !defined(WASM2C_HFI_ENABLED)
-// default to guard pages
-#define WASM_USE_GUARD_PAGES
+#if !defined(WASM_USE_MMAP) && !defined(WASM_USE_MALLOC_IMMOVABLE) && !defined(WASM_USE_MALLOC_MOVABLE)
+#define WASM_USE_MMAP
 #endif
 
-/** Define WASM_USE_INCREMENTAL_MOVEABLE_MEMORY_ALLOC if you want the runtime to
- * incrementally allocate heap/linear memory Note that this memory may be moved
- * when it needs to expand
- */
+#if defined(WASM_USE_MASKING) && !defined(WASM_USE_MMAP)
+#error "Masking must use WASM_USE_MMAP"
+#endif
+
+#if defined(WASM_USE_GUARD_PAGES) && UINTPTR_MAX == 0xffffffff
+#error "Guard pages not supported on 32 bit machines"
+#endif
 
 #if defined(_MSC_VER)
 #define WASM_RT_NO_RETURN __declspec(noreturn)
@@ -146,11 +164,10 @@ typedef struct {
 /** A Memory object. */
 typedef struct {
   /** The linear memory data, with a byte length of `size`. */
-#if defined(WASM_USE_GUARD_PAGES) || \
-    !defined(WASM_USE_INCREMENTAL_MOVEABLE_MEMORY_ALLOC)
-  uint8_t* const data;
-#else
+#ifdef WASM_USE_MALLOC_MOVABLE
   uint8_t* data;
+#else
+  uint8_t* const data;
 #endif
   /** The current and maximum page count for this Memory object. If there is no
    * maximum, `max_pages` is 0xffffffffu (i.e. UINT32_MAX). */
@@ -158,16 +175,15 @@ typedef struct {
   /** The current size of the linear memory, in bytes. */
   uint32_t size;
 
-  /** 32-bit platforms use masking for sandboxing. This sets the mask, which is
-   * computed based on the heap size */
-#if UINTPTR_MAX == 0xffffffff
+  /** This sets the mask, which is computed based on the heap size */
+#ifdef WASM_USE_MASKING
   const uint32_t mem_mask;
 #endif
 
 #if defined(WASM_CHECK_SHADOW_MEMORY)
   wasm2c_shadow_memory_t shadow_memory;
 #endif
-#ifdef WASM2C_HFI_ENABLED
+#ifdef WASM_USE_HFI
   hfi_sandbox hfi_config;
 #endif
 } wasm_rt_memory_t;
@@ -318,7 +334,7 @@ extern void wasm_rt_deallocate_memory(wasm_rt_memory_t*);
  *  ``` */
 extern uint32_t wasm_rt_grow_memory(wasm_rt_memory_t*, uint32_t pages);
 
-#ifdef WASM2C_HFI_ENABLED
+#ifdef WASM_USE_HFI
 
 #define wasm_rt_hfi_enable(memory) { hfi_set_sandbox_metadata(&(memory->hfi_config)); hfi_enter_sandbox(); }
 #define wasm_rt_hfi_disable() { hfi_exit_sandbox(); }

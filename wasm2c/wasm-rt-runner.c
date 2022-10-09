@@ -165,7 +165,7 @@ int main(int argc, char const* argv[]) {
     exit(1);
   }
 
-#ifdef WASM2C_HFI_ENABLED
+#ifdef WASM_USE_HFI
   wasm_rt_memory_t* memory = sandbox_info.get_wasm2c_memory(sandbox);
   wasm_rt_hfi_enable(memory);
 #endif
@@ -178,7 +178,7 @@ int main(int argc, char const* argv[]) {
       (wasm2c_start_func_t)symbol_lookup(library, "w2c__start");
   start_func(sandbox);
 
-#ifdef WASM2C_HFI_ENABLED
+#ifdef WASM_USE_HFI
   wasm_rt_hfi_disable();
 #endif
 

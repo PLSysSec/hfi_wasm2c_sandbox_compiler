@@ -8,7 +8,7 @@
 
 %%declarations
 
-#ifdef WASM2C_HFI_ENABLED
+#ifdef WASM_USE_HFI
 #include "hfi.h"
 #endif
 
@@ -94,23 +94,20 @@ void WASM2C_MALLOC_FAIL_CALLBACK(u32 ptr_size);
 #  define WASM2C_SHADOW_MEMORY_MARK_GLOBALS_HEAP_BOUNDARY(mem, ptr)
 #endif
 
-#if defined(WASM_USE_GUARD_PAGES) || defined(WASM2C_HFI_ENABLED)
-#  define MEMCHECK(mem, a, t)
-#else
+#ifdef WASM_USE_BOUNDS_CHECKS
 #  define MEMCHECK(mem, a, t) if (UNLIKELY((a) + sizeof(t) > mem->size)) { (void) TRAP(OOB); }
+#else
+#  define MEMCHECK(mem, a, t)
 #endif
 
-#if defined(WASM_USE_GUARD_PAGES) && UINTPTR_MAX == 0xffffffff
-// on 32-bit platforms we have to mask memory access into range
+#ifdef WASM_USE_MASKING
 #  define MEM_ACCESS_REF(mem, addr) &mem->data[addr & mem->mem_mask]
+#elif defined(WASM_USE_HFI)
+#  define MEM_ACCESS_REF(mem, addr) (char*) addr
 #else
 #  define MEM_ACCESS_REF(mem, addr) &mem->data[addr]
 #endif
 
-#if defined(WASM_USING_GLOBAL_HEAP) || defined(WASM2C_HFI_ENABLED)
-#  undef MEM_ACCESS_REF
-#  define MEM_ACCESS_REF(mem, addr) (char*) addr
-#endif
 
 #if WABT_BIG_ENDIAN
 
@@ -146,7 +143,7 @@ static inline void load_data(void *dest, const void *src, size_t n) {
   static inline wasmrep_t name(wasm_rt_memory_t* mem, u64 addr, const char* func_name) { \
     MEMCHECK(mem, addr, act_t);                                                          \
     act_t out_result;                                                                    \
-    hfi_mov1_load_anytype(addr, out_result);                                             \
+    hfi_mov1_load_anytype(MEM_ACCESS_REF(mem, addr), out_result);                        \
     WASM2C_SHADOW_MEMORY_LOAD(mem, func_name, addr, sizeof(act_t));                      \
     return (wasmrep_t)(signed_wasmrep_t)out_result;                                      \
   }
@@ -155,12 +152,12 @@ static inline void load_data(void *dest, const void *src, size_t n) {
   static inline void name(wasm_rt_memory_t* mem, u64 addr, wasmrep_t value, const char* func_name) { \
     MEMCHECK(mem, addr, act_t);                                                                      \
     act_t wrapped = (act_t)value;                                                                    \
-    hfi_mov1_store_anytype(addr, wrapped);                                                           \
+    hfi_mov1_store_anytype(MEM_ACCESS_REF(mem, addr), wrapped);                                      \
     WASM2C_SHADOW_MEMORY_STORE(mem, func_name, addr, sizeof(act_t));                                 \
   }
 #endif
 
-#ifdef WASM2C_HFI_ENABLED
+#ifdef WASM_USE_HFI
 
 #define DEFINE_LOAD DEFINE_HFI_LOAD
 #define DEFINE_STORE DEFINE_HFI_STORE

@@ -194,7 +194,7 @@ void wasm_rt_cleanup_func_types(wasm_func_type_t** p_func_type_structs,
   free(*p_func_type_structs);
 }
 
-#if UINTPTR_MAX == 0xffffffff
+#ifdef WASM_USE_MASKING
 static int is_power_of_two(uint64_t x) {
   return ((x != 0) && !(x & (x - 1)));
 }
@@ -202,14 +202,14 @@ static int is_power_of_two(uint64_t x) {
 
 #define WASM_PAGE_SIZE 65536
 
+// 64 bit machine
 #if UINTPTR_MAX == 0xffffffffffffffff
 
-#ifdef WASM2C_HFI_ENABLED
+#ifdef WASM_USE_GUARD_PAGES
 // Guard page of 4GiB
-#define WASM_HEAP_GUARD_PAGE_SIZE 0
+# define WASM_HEAP_GUARD_PAGE_SIZE 0x100000000ull
 #else
-// Guard page of 4GiB
-#define WASM_HEAP_GUARD_PAGE_SIZE 0x100000000ull
+# define WASM_HEAP_GUARD_PAGE_SIZE 0
 #endif
 
 // Heap aligned to 4GB
@@ -218,7 +218,10 @@ static int is_power_of_two(uint64_t x) {
 #define WASM_HEAP_DEFAULT_MAX_PAGES 65536
 // Runtime can override the max heap up to 4GB
 #define WASM_HEAP_MAX_ALLOWED_PAGES 65536
+
+// 32 bit machine
 #elif UINTPTR_MAX == 0xffffffff
+
 // No guard pages
 #define WASM_HEAP_GUARD_PAGE_SIZE 0
 // Unaligned heap
@@ -251,37 +254,46 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
                              uint32_t max_pages) {
   const uint32_t byte_length = initial_pages * WASM_PAGE_SIZE;
 
-  const uint32_t suggested_max_pages =
-      max_pages == 0 ? WASM_HEAP_DEFAULT_MAX_PAGES : max_pages;
-  const uint32_t chosen_max_pages =
-      (WASM_HEAP_MAX_ALLOWED_PAGES < suggested_max_pages)
-          ? WASM_HEAP_MAX_ALLOWED_PAGES
-          : suggested_max_pages;
+  uint32_t chosen_max_pages = 0;
+  if (max_pages == 0) {
+#define MAX_MACRO(a,b) (((a)>(b))?(a):(b))
+    chosen_max_pages = MAX_MACRO(initial_pages, WASM_HEAP_DEFAULT_MAX_PAGES);
+#undef MAX_MACRO
+  } else if (max_pages > WASM_HEAP_MAX_ALLOWED_PAGES) {
+    chosen_max_pages = WASM_HEAP_MAX_ALLOWED_PAGES;
+  } else {
+    chosen_max_pages = max_pages;
+  }
 
   if (chosen_max_pages < initial_pages) {
     return false;
   }
 
-#ifdef WASM_USE_GUARD_PAGES
-  // mmap based heaps with guard pages
-  // Guard pages already allocates memory incrementally thus we don't need to
-  // look at WASM_USE_INCREMENTAL_MOVEABLE_MEMORY_ALLOC
+#ifdef WASM_USE_MMAP
   void* addr = NULL;
   const uint64_t retries = 10;
   const uint64_t heap_reserve_size =
       compute_heap_reserve_space(chosen_max_pages);
 
-  // 32-bit platforms rely on masking for sandboxing
-  // thus we require the heap reserve size to always be a power of 2
-#if UINTPTR_MAX == 0xffffffff
-  if (!is_power_of_two(heap_reserve_size)) {
-    return false;
-  }
-#endif
+  // masking for sandboxing requires the heap reserve size to always be a power of 2
+# ifdef WASM_USE_MASKING
+    if (!is_power_of_two(heap_reserve_size)) {
+      return false;
+    }
+# endif
+
+# ifdef WASM_USE_HFI
+  // HFI precommits all memory, as HFI will ensure wasm trapping semantics
+  // Since mmap is lazy, this does not increase memory consumption
+  // The advantage is that wasm_grow does not have to call mprotect; it just changes the hfi config
+  int prot_flags = MMAP_PROT_READ | MMAP_PROT_WRITE;
+# else
+  int prot_flags = MMAP_PROT_NONE;
+# endif
 
   for (uint64_t i = 0; i < retries; i++) {
     addr =
-        os_mmap_aligned(NULL, heap_reserve_size, MMAP_PROT_NONE, MMAP_MAP_NONE,
+        os_mmap_aligned(NULL, heap_reserve_size, prot_flags, MMAP_MAP_NONE,
                         WASM_HEAP_ALIGNMENT, 0 /* alignment_offset */);
     if (addr) {
       break;
@@ -292,10 +304,19 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
     os_print_last_error("os_mmap failed.");
     return false;
   }
+
+# ifndef WASM_USE_HFI
   int ret = os_mmap_commit(addr, byte_length, MMAP_PROT_READ | MMAP_PROT_WRITE);
   if (ret != 0) {
     return false;
   }
+# endif
+
+  // Compute the mask for sandboxing.
+# ifdef WASM_USE_MASKING
+  *(uint32_t*)&memory->mem_mask = heap_reserve_size - 1;
+# endif
+
   // This is a valid way to initialize a constant field that is not undefined
   // behavior
   // https://stackoverflow.com/questions/9691404/how-to-initialize-const-in-a-struct-in-c-with-malloc
@@ -305,28 +326,24 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
   *(uint8_t**)&memory->data = addr;
 #else
   // malloc based heaps
-#ifdef WASM_USE_INCREMENTAL_MOVEABLE_MEMORY_ALLOC
-  memory->data = calloc(byte_length, 1);
-#else
-  const uint64_t heap_max_size = ((uint64_t)chosen_max_pages) * WASM_PAGE_SIZE;
-  *(uint8_t**)&memory->data = calloc(heap_max_size, 1);
-#endif
+# ifdef WASM_USE_MALLOC_MOVABLE
+    memory->data = calloc(byte_length, 1);
+# else
+    const uint64_t heap_max_size = ((uint64_t)chosen_max_pages) * WASM_PAGE_SIZE;
+    *(uint8_t**)&memory->data = calloc(heap_max_size, 1);
+# endif
+
 #endif
 
   memory->size = byte_length;
   memory->pages = initial_pages;
   memory->max_pages = chosen_max_pages;
 
-  // 32-bit platforms use masking for sandboxing. Compute the mask
-#if UINTPTR_MAX == 0xffffffff
-  *(uint32_t*)&memory->mem_mask = heap_reserve_size - 1;
-#endif
-
 #if defined(WASM_CHECK_SHADOW_MEMORY)
   wasm2c_shadow_memory_create(memory);
 #endif
 
-#ifdef WASM2C_HFI_ENABLED
+#ifdef WASM_USE_HFI
   hfi_sandbox* hfi_config = &(memory->hfi_config);
   memset(hfi_config, 0, sizeof(hfi_sandbox));
   hfi_config->is_trusted_sandbox = true;
@@ -344,7 +361,7 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
 }
 
 void wasm_rt_deallocate_memory(wasm_rt_memory_t* memory) {
-#ifdef WASM_USE_GUARD_PAGES
+#ifdef WASM_USE_MMAP
   const uint64_t heap_reserve_size =
       compute_heap_reserve_space(memory->max_pages);
   os_munmap(memory->data, heap_reserve_size);
@@ -370,26 +387,31 @@ uint32_t wasm_rt_grow_memory(wasm_rt_memory_t* memory, uint32_t delta) {
   uint32_t new_size = new_pages * WASM_PAGE_SIZE;
   uint32_t delta_size = delta * WASM_PAGE_SIZE;
 
-#ifdef WASM_USE_GUARD_PAGES
-  // mmap based heaps with guard pages
-  int ret = os_mmap_commit(memory->data + old_size, delta_size,
-                           MMAP_PROT_READ | MMAP_PROT_WRITE);
-  if (ret != 0) {
-    return (uint32_t)-1;
-  }
+#ifdef WASM_USE_MMAP
+
+# ifndef WASM_USE_HFI
+    // mmap based heaps with guard pages
+    int ret = os_mmap_commit(memory->data + old_size, delta_size,
+                            MMAP_PROT_READ | MMAP_PROT_WRITE);
+    if (ret != 0) {
+      return (uint32_t)-1;
+    }
+
+# endif
+
 #else
   // malloc based heaps --- if below macro is not defined, the max memory range
   // is already allocated
-#ifdef WASM_USE_INCREMENTAL_MOVEABLE_MEMORY_ALLOC
-  uint8_t* new_data = realloc(memory->data, new_size);
-  if (new_data == NULL) {
-    return (uint32_t)-1;
-  }
-#if !WABT_BIG_ENDIAN
-  memset(new_data + old_size, 0, delta_size);
-#endif
-  memory->data = new_data;
-#endif
+# ifdef WASM_USE_MALLOC_MOVABLE
+    uint8_t* new_data = realloc(memory->data, new_size);
+    if (new_data == NULL) {
+      return (uint32_t)-1;
+    }
+#   if !WABT_BIG_ENDIAN
+      memset(new_data + old_size, 0, delta_size);
+#   endif
+    memory->data = new_data;
+# endif
 #endif
 
 #if WABT_BIG_ENDIAN
@@ -402,7 +424,7 @@ uint32_t wasm_rt_grow_memory(wasm_rt_memory_t* memory, uint32_t delta) {
   wasm2c_shadow_memory_expand(memory);
 #endif
 
-#ifdef WASM2C_HFI_ENABLED
+#ifdef WASM_USE_HFI
   hfi_sandbox* hfi_config = &(memory->hfi_config);
   // wasm page size is a multiple of 64k, so this satisfies the hfi constraint that size has to be a multiple of 64k
   hfi_config->data_ranges[0].offset_limit = memory->size;

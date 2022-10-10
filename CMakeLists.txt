@@ -79,7 +79,7 @@ set(WasmSafetyEnforcement "" CACHE STRING "WasmSafetyEnforcement chosen by the u
 set_property(CACHE WasmSafetyEnforcement PROPERTY STRINGS ${WasmSafetyEnforcementVals})
 
 if (WasmSafetyEnforcement STREQUAL "WASM_USE_GUARD_PAGES")
-  add_compile_definitions(WASM_USE_HFI)
+  add_compile_definitions(WASM_USE_GUARD_PAGES)
 elseif (WasmSafetyEnforcement STREQUAL "WASM_USE_BOUNDS_CHECKS")
   add_compile_definitions(WASM_USE_BOUNDS_CHECKS)
 elseif (WasmSafetyEnforcement STREQUAL "WASM_USE_MASKING")

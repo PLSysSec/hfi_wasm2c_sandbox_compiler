@@ -30,6 +30,10 @@
 #include "hfi.h"
 #endif
 
+#ifdef HFI_EMULATION
+#include <sys/mman.h>
+#endif
+
 #if defined(_WIN32)
 #define WASM2C_FUNC_EXPORT __declspec(dllexport)
 #else
@@ -367,8 +371,39 @@ extern void wasm_rt_deallocate_table(wasm_rt_table_t*);
 extern void wasm_rt_expand_table(wasm_rt_table_t*);
 
 #ifdef HFI_EMULATION
+#define wasm_rt_hfi_emulate_reserve_lower4_start() 0x10000
+
 // HFI emulation requires the first 4gb for the wasm heap. This function reserves that range
-extern void wasm_rt_hfi_emulate_reserve_lower4();
+#define wasm_rt_hfi_emulate_reserve_lower4() {                                                       \
+  /* The region 0x0 to wasm_rt_hfi_emulate_reserve_lower4_start is reserved by the OS */             \
+  /* Start after that */                                                                             \
+  void* page_addr = (void*) wasm_rt_hfi_emulate_reserve_lower4_start();                              \
+  const uint64_t alloc_size = ((uint64_t) 0x100000000) - wasm_rt_hfi_emulate_reserve_lower4_start(); \
+                                                                                                     \
+  void* allocated = 0;                                                                               \
+                                                                                                     \
+  for (int retry = 0; retry < 10; retry++) {                                                         \
+                                                                                                     \
+    allocated = mmap(                                                                                \
+      page_addr,                                                                                     \
+      alloc_size,                                                                                    \
+      PROT_READ | PROT_WRITE,                                                                        \
+      MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED_NOREPLACE,                                             \
+      -1, 0                                                                                          \
+    );                                                                                               \
+                                                                                                     \
+    if (allocated) {                                                                                 \
+      break;                                                                                         \
+    }                                                                                                \
+  }                                                                                                  \
+                                                                                                     \
+  int allocated_correct = allocated == page_addr;                                                    \
+                                                                                                     \
+  if(!allocated || !allocated_correct) {                                                             \
+    printf("Reserving lower 4GB failed!!!!!!!!!\n");                                                 \
+    abort();                                                                                         \
+  }                                                                                                  \
+}
 #endif
 
 // One time init function for wasm runtime. Should be called once for the

@@ -198,38 +198,17 @@ void wasm_rt_cleanup_func_types(wasm_func_type_t** p_func_type_structs,
 #ifdef HFI_EMULATION
 static int hfi_emulate_reserved_lower_4 = 0;
 
-// HFI emulation requires the first 4gb for the wasm heap. This function reserves that range
-void wasm_rt_hfi_emulate_reserve_lower4() {
-  // The region 0x0 to 0x10000 is reserved by the OS so we cannot mmap
-  // Start after that
-  void* page_addr = (void*) 0x10000;
-  const uint64_t alloc_size = ((uint64_t) 0x100000000) - 0x10000;
-
-  void* allocated = 0;
-
-  for (int retry = 0; retry < 10; retry++) {
-
-    allocated = os_mmap(
-      page_addr,
-      alloc_size,
-      MMAP_PROT_READ | MMAP_PROT_WRITE,
-      MMAP_MAP_FIXED_NOREPLACE
-    );
-
-    if (allocated) {
-      break;
-    }
+static void check_if_hfi_emulate_reserved_lower_4_has_run() {
+  // If lower 4GB is reserved we should be able to access it
+  // access some pages in the lower 4GB below
+  uint64_t* a = (uint64_t*) 0x12345600;
+  uint64_t* b = (uint64_t*) 0xfffffff0;
+  if (*a != 0 || *b != 0) {
+    printf("Error: Lower 4GB not zero initialized");
+    abort();
   }
-
-    int allocated_correct = allocated == page_addr;
-
-    if(!allocated || !allocated_correct) {
-      printf("Reserving lower 4GB failed!!!!!!!!!\n");
-      abort();
-    }
-
-    hfi_emulate_reserved_lower_4 = 1;
 }
+
 #endif
 
 #ifdef WASM_USE_MASKING
@@ -396,8 +375,8 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
 
 # ifdef HFI_EMULATION
     if(hfi_emulate_reserved_lower_4 == 0) {
-      printf("Error: Expected that wasm_rt_hfi_emulate_reserve_lower4() is called at the start of the program to reserve the bottom 4 gb.\n");
-      abort();
+      check_if_hfi_emulate_reserved_lower_4_has_run();
+      hfi_emulate_reserved_lower_4 = 1;
     } else if(hfi_emulate_reserved_lower_4 == 2) {
       printf("Error: Cannot create more than one sandbox while in HFI_EMULATION mode.\n");
       abort();
@@ -429,6 +408,10 @@ void wasm_rt_deallocate_memory(wasm_rt_memory_t* memory) {
     printf("Error: Unexpected value for hfi_emulate_reserved_lower_4.\n");
     abort();
   }
+
+  void* page_addr = (void*) wasm_rt_hfi_emulate_reserve_lower4_start();
+  const uint64_t alloc_size = ((uint64_t) 0x100000000) - wasm_rt_hfi_emulate_reserve_lower4_start();
+  memset(page_addr, 0, alloc_size);
 
   hfi_emulate_reserved_lower_4 = 1;
 #endif

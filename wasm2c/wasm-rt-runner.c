@@ -153,7 +153,6 @@ int main(int argc, char const* argv[]) {
   void* library = open_lib(wasm2c_module_path);
 
   #ifdef HFI_EMULATION
-  void_void_t wasm_rt_hfi_emulate_reserve_lower4 = (void_void_t)symbol_lookup(library, "wasm_rt_hfi_emulate_reserve_lower4");
   wasm_rt_hfi_emulate_reserve_lower4();
   #endif
 

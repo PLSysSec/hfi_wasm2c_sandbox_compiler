@@ -21,7 +21,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#ifndef WASM_NO_UVWASI
 #include "uvwasi.h"
+#endif
 
 #ifdef WASM_USE_HFI
 #include "hfi.h"
@@ -210,7 +213,9 @@ typedef struct wasm_func_type_t {
 #define WASM2C_WASI_MAX_FDS 32
 typedef struct wasm_sandbox_wasi_data {
   wasm_rt_memory_t* heap_memory;
+#ifndef WASM_NO_UVWASI
   uvwasi_t * uvwasi;
+#endif
 
   uint32_t tempRet0;
 
@@ -230,7 +235,9 @@ typedef struct wasm_sandbox_wasi_data {
 typedef void (*wasm_rt_sys_init_t)(void);
 typedef void* (*create_wasm2c_sandbox_t)(uint32_t max_wasm_pages);
 typedef void (*destroy_wasm2c_sandbox_t)(void* sbx_ptr);
+#ifndef WASM_NO_UVWASI
 typedef void (*init_uvwasi_state_t)(void* sbx_ptr, uvwasi_t *);
+#endif
 typedef void* (*lookup_wasm2c_nonfunc_export_t)(void* sbx_ptr,
                                                 const char* name);
 typedef uint32_t (*lookup_wasm2c_func_index_t)(void* sbx_ptr,
@@ -248,7 +255,9 @@ typedef wasm_rt_memory_t* (*get_wasm2c_memory_t)(void* sbx_ptr);
 typedef struct wasm2c_sandbox_funcs_t {
   wasm_rt_sys_init_t wasm_rt_sys_init;
   create_wasm2c_sandbox_t create_wasm2c_sandbox;
+#ifndef WASM_NO_UVWASI
   init_uvwasi_state_t init_uvwasi_state;
+#endif
   destroy_wasm2c_sandbox_t destroy_wasm2c_sandbox;
   lookup_wasm2c_nonfunc_export_t lookup_wasm2c_nonfunc_export;
   lookup_wasm2c_func_index_t lookup_wasm2c_func_index;

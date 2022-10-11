@@ -7,7 +7,9 @@
 #include <string.h>
 
 #include "wasm-rt.h"
+#ifndef WASM_NO_UVWASI
 #include "uvwasi.h"
+#endif
 
 #if defined(_WIN32)
 // Ensure the min/max macro in the header doesn't collide with functions in
@@ -95,6 +97,7 @@ typedef void (*void_void_t)();
 typedef wasm2c_sandbox_funcs_t (*get_info_func_t)();
 typedef void (*wasm2c_start_func_t)(void* sbx);
 
+#ifndef WASM_NO_UVWASI
 void init_uvwasi_local(uvwasi_t * local_uvwasi_state, int argc, char const * argv[])
 {
     uvwasi_options_t init_options;
@@ -129,7 +132,7 @@ void init_uvwasi_local(uvwasi_t * local_uvwasi_state, int argc, char const * arg
         exit(1);
     }
 }
-
+#endif
 
 int main(int argc, char const* argv[]) {
   if (argc < 2) {
@@ -175,9 +178,11 @@ int main(int argc, char const* argv[]) {
   wasm_rt_hfi_enable(memory);
 #endif
 
+#ifndef WASM_NO_UVWASI
   uvwasi_t local_uvwasi_state;
   init_uvwasi_local(&local_uvwasi_state, argc, argv);
   sandbox_info.init_uvwasi_state(sandbox, &local_uvwasi_state);
+#endif
 
   wasm2c_start_func_t start_func =
       (wasm2c_start_func_t)symbol_lookup(library, "w2c__start");

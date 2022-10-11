@@ -357,6 +357,11 @@ extern void wasm_rt_deallocate_table(wasm_rt_table_t*);
 
 extern void wasm_rt_expand_table(wasm_rt_table_t*);
 
+#ifdef HFI_EMULATION
+// HFI emulation requires the first 4gb for the wasm heap. This function reserves that range
+extern void wasm_rt_hfi_emulate_reserve_lower4();
+#endif
+
 // One time init function for wasm runtime. Should be called once for the
 // current process
 extern void wasm_rt_sys_init();

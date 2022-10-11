@@ -194,6 +194,43 @@ void wasm_rt_cleanup_func_types(wasm_func_type_t** p_func_type_structs,
   free(*p_func_type_structs);
 }
 
+#ifdef HFI_EMULATION
+static int hfi_emulate_reserved_lower_4 = 0;
+
+// HFI emulation requires the first 4gb for the wasm heap. This function reserves that range
+void wasm_rt_hfi_emulate_reserve_lower4() {
+  // The region 0x0 to 0x10000 is reserved by the OS so we cannot mmap
+  // Start after that
+  void* page_addr = (void*) 0x10000;
+  const uint64_t alloc_size = ((uint64_t) 0x100000000) - 0x10000;
+
+  void* allocated = 0;
+
+  for (int retry = 0; retry < 10; retry++) {
+
+    allocated = os_mmap(
+      page_addr,
+      alloc_size,
+      MMAP_PROT_READ | MMAP_PROT_WRITE,
+      MMAP_MAP_FIXED_NOREPLACE
+    );
+
+    if (allocated) {
+      break;
+    }
+  }
+
+    int allocated_correct = allocated == page_addr;
+
+    if(!allocated || !allocated_correct) {
+      printf("Reserving lower 4GB failed!!!!!!!!!\n");
+      abort();
+    }
+
+    hfi_emulate_reserved_lower_4 = 1;
+}
+#endif
+
 #ifdef WASM_USE_MASKING
 static int is_power_of_two(uint64_t x) {
   return ((x != 0) && !(x & (x - 1)));
@@ -355,6 +392,19 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
   hfi_config->data_ranges[0].range_size_type = (uint8_t) HFI_RANGE_SIZE_TYPE_LARGE;
   // TODO: code range
   hfi_config->code_ranges[0].executable = true;
+
+# ifdef HFI_EMULATION
+    if(hfi_emulate_reserved_lower_4 == 0) {
+      printf("Error: Expected that wasm_rt_hfi_emulate_reserve_lower4() is called at the start of the program to reserve the bottom 4 gb.\n");
+      abort();
+    } else if(hfi_emulate_reserved_lower_4 == 2) {
+      printf("Error: Cannot create more than one sandbox while in HFI_EMULATION mode.\n");
+      abort();
+    }
+
+    hfi_emulate_reserved_lower_4 = 2;
+# endif
+
 #endif
 
   return true;
@@ -371,6 +421,15 @@ void wasm_rt_deallocate_memory(wasm_rt_memory_t* memory) {
 
 #if defined(WASM_CHECK_SHADOW_MEMORY)
   wasm2c_shadow_memory_destroy(memory);
+#endif
+
+#ifdef HFI_EMULATION
+  if(hfi_emulate_reserved_lower_4 != 2) {
+    printf("Error: Unexpected value for hfi_emulate_reserved_lower_4.\n");
+    abort();
+  }
+
+  hfi_emulate_reserved_lower_4 = 1;
 #endif
 }
 

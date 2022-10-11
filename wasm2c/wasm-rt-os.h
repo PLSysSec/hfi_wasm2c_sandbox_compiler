@@ -19,7 +19,8 @@ enum {
   MMAP_MAP_32BIT = 1,
   /* Don't interpret addr as a hint: place the mapping at exactly
      that address. */
-  MMAP_MAP_FIXED = 2
+  MMAP_MAP_FIXED = 2,
+  MMAP_MAP_FIXED_NOREPLACE = 4
 };
 
 void os_init();

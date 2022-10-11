@@ -69,6 +69,9 @@ void* os_mmap(void* hint, size_t size, int prot, int flags) {
   if (flags & MMAP_MAP_FIXED)
     map_flags |= MAP_FIXED;
 
+  if (flags & MMAP_MAP_FIXED_NOREPLACE)
+    map_flags |= MAP_FIXED_NOREPLACE;
+
   addr = mmap(hint, request_size, map_prot, map_flags, -1, 0);
 
   if (addr == MAP_FAILED)

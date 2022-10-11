@@ -73,6 +73,7 @@ option(WERROR "Build with warnings as errors" OFF)
 # WASI support is still a work in progress.
 # Only a handful of syscalls are supported at this point.
 option(WITH_WASI "Build WASI support via uvwasi" OFF)
+option(HFI_EMULATION_ENABLE "Build with hfi emulation on" OFF)
 
 set(WasmSafetyEnforcementVals WASM_USE_GUARD_PAGES WASM_USE_BOUNDS_CHECKS WASM_USE_MASKING WASM_USE_HFI)
 set(WasmSafetyEnforcement "" CACHE STRING "WasmSafetyEnforcement chosen by the user at CMake configure time")
@@ -88,6 +89,10 @@ elseif (WasmSafetyEnforcement STREQUAL "WASM_USE_HFI")
   add_compile_definitions(WASM_USE_HFI)
 else()
   message(FATAL_ERROR "Specify '-DWasmSafetyEnforcement=Foo' where Foo is one of ${WasmSafetyEnforcementVals}")
+endif()
+
+if (HFI_EMULATION_ENABLE)
+  add_compile_definitions(HFI_EMULATION)
 endif()
 
 if (MSVC)

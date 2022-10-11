@@ -484,10 +484,9 @@ uint32_t wasm_rt_grow_memory(wasm_rt_memory_t* memory, uint32_t delta) {
 #endif
 
 #ifdef WASM_USE_HFI
-  hfi_sandbox* hfi_config = &(memory->hfi_config);
   // wasm page size is a multiple of 64k, so this satisfies the hfi constraint that size has to be a multiple of 64k
-  hfi_config->data_ranges[0].offset_limit = memory->size;
-  hfi_set_sandbox_metadata(hfi_config);
+  memory->hfi_config.data_ranges[0].offset_limit = memory->size;
+  wasm_rt_hfi_enable(memory);
 #endif
 
   return old_pages;

@@ -409,6 +409,8 @@ const char SECTION_NAME(sandboxapis)[] =
 "}\n"
 "\n"
 "static void* create_wasm2c_sandbox(uint32_t max_wasm_pages) {\n"
+"  wasm2c_configuration code_config = wasm2c_configuration_init();\n"
+"  wasm2c_configuration_check(&code_config);\n"
 "  wasm2c_sandbox_t* const sbx = (wasm2c_sandbox_t* const) calloc(sizeof(wasm2c_sandbox_t), 1);\n"
 "  if (!init_memory(sbx, max_wasm_pages)) {\n"
 "    free(sbx);\n"

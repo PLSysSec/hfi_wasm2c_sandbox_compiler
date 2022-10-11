@@ -384,6 +384,87 @@ extern void wasm_rt_cleanup_wasi(wasm_sandbox_wasi_data*);
 // when using dynamic libraries
 extern void wasm2c_ensure_linked();
 
+typedef struct wasm2c_configuration {
+  uint8_t bit_WASM_USE_GUARD_PAGES;
+  uint8_t bit_WASM_USE_BOUNDS_CHECKS;
+  uint8_t bit_WASM_USE_HFI;
+  uint8_t bit_WASM_USE_MASKING;
+  uint8_t bit_WASM_NO_UVWASI;
+  uint8_t bit_WASM_USE_MMAP;
+  uint8_t bit_WASM_USE_MALLOC_IMMOVABLE;
+  uint8_t bit_WASM_USE_MALLOC_MOVABLE;
+  uint8_t bit_HFI_EMULATION;
+} wasm2c_configuration;
+
+#ifdef WASM_USE_GUARD_PAGES
+#define VAL_WASM_USE_GUARD_PAGES 1
+#else
+#define VAL_WASM_USE_GUARD_PAGES 0
+#endif
+
+#ifdef WASM_USE_BOUNDS_CHECKS
+#define VAL_WASM_USE_BOUNDS_CHECKS 1
+#else
+#define VAL_WASM_USE_BOUNDS_CHECKS 0
+#endif
+
+#ifdef WASM_USE_HFI
+#define VAL_WASM_USE_HFI 1
+#else
+#define VAL_WASM_USE_HFI 0
+#endif
+
+#ifdef WASM_USE_MASKING
+#define VAL_WASM_USE_MASKING 1
+#else
+#define VAL_WASM_USE_MASKING 0
+#endif
+
+#ifdef WASM_NO_UVWASI
+#define VAL_WASM_NO_UVWASI 1
+#else
+#define VAL_WASM_NO_UVWASI 0
+#endif
+
+#ifdef WASM_USE_MMAP
+#define VAL_WASM_USE_MMAP 1
+#else
+#define VAL_WASM_USE_MMAP 0
+#endif
+
+#ifdef WASM_USE_MALLOC_IMMOVABLE
+#define VAL_WASM_USE_MALLOC_IMMOVABLE 1
+#else
+#define VAL_WASM_USE_MALLOC_IMMOVABLE 0
+#endif
+
+#ifdef WASM_USE_MALLOC_MOVABLE
+#define VAL_WASM_USE_MALLOC_MOVABLE 1
+#else
+#define VAL_WASM_USE_MALLOC_MOVABLE 0
+#endif
+
+#ifdef HFI_EMULATION
+#define VAL_HFI_EMULATION 1
+#else
+#define VAL_HFI_EMULATION 0
+#endif
+
+#define wasm2c_configuration_init() {   \
+  VAL_WASM_USE_GUARD_PAGES,             \
+  VAL_WASM_USE_BOUNDS_CHECKS,           \
+  VAL_WASM_USE_HFI,                     \
+  VAL_WASM_USE_MASKING,                 \
+  VAL_WASM_NO_UVWASI,                   \
+  VAL_WASM_USE_MMAP,                    \
+  VAL_WASM_USE_MALLOC_IMMOVABLE,        \
+  VAL_WASM_USE_MALLOC_MOVABLE,          \
+  VAL_HFI_EMULATION                     \
+}
+
+// Function to check configuration compatibility between binary and runtime
+extern void wasm2c_configuration_check(wasm2c_configuration* code_config);
+
 // Runtime functions for shadow memory
 
 // Create the shadow memory

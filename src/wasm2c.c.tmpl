@@ -404,6 +404,8 @@ static u32 lookup_wasm2c_func_index(void* sbx_ptr, u32 param_count, u32 result_c
 }
 
 static void* create_wasm2c_sandbox(uint32_t max_wasm_pages) {
+  wasm2c_configuration code_config = wasm2c_configuration_init();
+  wasm2c_configuration_check(&code_config);
   wasm2c_sandbox_t* const sbx = (wasm2c_sandbox_t* const) calloc(sizeof(wasm2c_sandbox_t), 1);
   if (!init_memory(sbx, max_wasm_pages)) {
     free(sbx);

@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #ifdef WASM_RT_CUSTOM_TRAP_HANDLER
 // forward declare the signature of any custom trap handler
@@ -555,6 +556,23 @@ void wasm_rt_expand_table(wasm_rt_table_t* table) {
 void wasm2c_ensure_linked() {
   // We use this to ensure the dynamic library with the wasi symbols is loaded
   // for the host application
+}
+
+void wasm2c_configuration_check(wasm2c_configuration* code_config) {
+  wasm2c_configuration runtime_config = wasm2c_configuration_init();
+  int different = memcmp(code_config, &runtime_config, sizeof(wasm2c_configuration));
+
+  if (different) {
+    printf("wasm2c code configuration does not match wasm2c runtime configuration\n");
+    uint8_t* code_config_ptr = (uint8_t*) code_config;
+    uint8_t* runtime_config_ptr = (uint8_t*) &runtime_config;
+
+    for(size_t i = 0; i < sizeof(wasm2c_configuration); i++) {
+      printf("Byte %zu" "(Code: %" PRIu8 " : Runtime: %" PRIu8 ")", i, code_config_ptr[i], runtime_config_ptr[i]);
+    }
+
+    abort();
+  }
 }
 
 #undef WASM_PAGE_SIZE

@@ -117,11 +117,18 @@ void WASM2C_MALLOC_FAIL_CALLBACK(u32 ptr_size);
 static inline void load_data(void *dest, const void *src, size_t n) {
   memcpy(dest, src, n);
 }
+
+#ifdef HFI_EMULATION
+#define LOAD_DATA(m, o, i, s) { load_data((void*)o, i, s); \
+  WASM2C_SHADOW_MEMORY_RESERVE(&m, o, s);                       \
+  WASM2C_SHADOW_MEMORY_STORE(&m, "GlobalDataLoad", o, s);       \
+}
+#else
 #define LOAD_DATA(m, o, i, s) { load_data(&(m.data[o]), i, s); \
   WASM2C_SHADOW_MEMORY_RESERVE(&m, o, s);                       \
   WASM2C_SHADOW_MEMORY_STORE(&m, "GlobalDataLoad", o, s);       \
 }
-
+#endif
 #define DEFINE_NONHFI_LOAD(name, act_t, signed_wasmrep_t, wasmrep_t)                     \
   static inline wasmrep_t name(wasm_rt_memory_t* mem, u64 addr, const char* func_name) { \
     MEMCHECK(mem, addr, act_t);                                                          \

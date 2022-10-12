@@ -520,7 +520,7 @@ typedef struct wasm2c_configuration {
 }
 
 // Function to check configuration compatibility between binary and runtime
-extern void wasm2c_configuration_check(wasm2c_configuration* code_config);
+extern void wasm2c_configuration_check(wasm2c_configuration* code_config, size_t config_size);
 
 extern void wasm2c_memory_check(wasm_rt_memory_t* mem);
 

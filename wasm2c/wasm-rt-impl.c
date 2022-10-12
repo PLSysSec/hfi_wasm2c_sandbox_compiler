@@ -553,9 +553,15 @@ void wasm2c_ensure_linked() {
   // for the host application
 }
 
-void wasm2c_configuration_check(wasm2c_configuration* code_config) {
+void wasm2c_configuration_check(wasm2c_configuration* code_config, size_t config_size) {
+
+  if (config_size != sizeof(wasm2c_configuration)) {
+    printf("wasm2c code configuration size does not match wasm2c runtime configuration size: %zu, %zu\n", config_size, sizeof(wasm2c_configuration));
+    abort();
+  }
+
   wasm2c_configuration runtime_config = wasm2c_configuration_init();
-  int different = memcmp(code_config, &runtime_config, sizeof(wasm2c_configuration));
+  int different = memcmp(code_config, &runtime_config, config_size);
 
   if (different) {
     printf("wasm2c code configuration does not match wasm2c runtime configuration\n");

@@ -316,9 +316,14 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
 # endif
 
   for (uint64_t i = 0; i < retries; i++) {
+# ifdef HFI_EMULATION2
+    addr =
+        os_mmap((void*) hfi_emulate2_memory_start(), heap_reserve_size, prot_flags, MMAP_MAP_FIXED_NOREPLACE);
+#else
     addr =
         os_mmap_aligned(NULL, heap_reserve_size, prot_flags, MMAP_MAP_NONE,
                         WASM_HEAP_ALIGNMENT, 0 /* alignment_offset */);
+#endif
     if (addr) {
       break;
     }
@@ -559,9 +564,25 @@ void wasm2c_configuration_check(wasm2c_configuration* code_config) {
 
     for(size_t i = 0; i < sizeof(wasm2c_configuration); i++) {
       printf("Byte %zu" "(Code: %" PRIu8 " : Runtime: %" PRIu8 ")", i, code_config_ptr[i], runtime_config_ptr[i]);
+      wasm2c_memory_check((wasm_rt_memory_t*) 0x123400);
     }
 
     abort();
+  }
+}
+
+__attribute__((noinline))
+void wasm2c_memory_check(wasm_rt_memory_t* mem) {
+  bool found = false;
+  for(uint64_t i = 0; i < mem->size; i++) {
+    if(mem->data[i] != 0) {
+      found = true;
+      printf("Byte %" PRIu64 " is non zero.\n", i);
+      break;
+    }
+  }
+  if (!found) {
+    printf("All bytes zero\n");
   }
 }
 

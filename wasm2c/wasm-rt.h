@@ -372,13 +372,19 @@ extern void wasm_rt_expand_table(wasm_rt_table_t*);
 
 #ifdef HFI_EMULATION
 #define wasm_rt_hfi_emulate_reserve_lower4_start() 0x10000
+#ifndef HFI_EMULATION_RR
+#  define wasm_rt_hfi_emulate_reserve_lower4_end() 0x100000000
+#else
+   // Limit when running under the rr debugger.
+#  define wasm_rt_hfi_emulate_reserve_lower4_end() 0x68000000
+#endif
 
 // HFI emulation requires the first 4gb for the wasm heap. This function reserves that range
 #define wasm_rt_hfi_emulate_reserve_lower4() {                                                       \
   /* The region 0x0 to wasm_rt_hfi_emulate_reserve_lower4_start is reserved by the OS */             \
   /* Start after that */                                                                             \
   void* page_addr = (void*) wasm_rt_hfi_emulate_reserve_lower4_start();                              \
-  const uint64_t alloc_size = ((uint64_t) 0x100000000) - wasm_rt_hfi_emulate_reserve_lower4_start(); \
+  const uint64_t alloc_size = ((uint64_t) wasm_rt_hfi_emulate_reserve_lower4_end()) - wasm_rt_hfi_emulate_reserve_lower4_start(); \
                                                                                                      \
   void* allocated = 0;                                                                               \
                                                                                                      \
@@ -429,6 +435,7 @@ typedef struct wasm2c_configuration {
   uint8_t bit_WASM_USE_MALLOC_IMMOVABLE;
   uint8_t bit_WASM_USE_MALLOC_MOVABLE;
   uint8_t bit_HFI_EMULATION;
+  uint8_t bit_WASM_CHECK_SHADOW_MEMORY;
 } wasm2c_configuration;
 
 #ifdef WASM_USE_GUARD_PAGES
@@ -485,6 +492,12 @@ typedef struct wasm2c_configuration {
 #define VAL_HFI_EMULATION 0
 #endif
 
+#ifdef WASM_CHECK_SHADOW_MEMORY
+#define VAL_WASM_CHECK_SHADOW_MEMORY 1
+#else
+#define VAL_WASM_CHECK_SHADOW_MEMORY 0
+#endif
+
 #define wasm2c_configuration_init() {   \
   VAL_WASM_USE_GUARD_PAGES,             \
   VAL_WASM_USE_BOUNDS_CHECKS,           \
@@ -494,7 +507,8 @@ typedef struct wasm2c_configuration {
   VAL_WASM_USE_MMAP,                    \
   VAL_WASM_USE_MALLOC_IMMOVABLE,        \
   VAL_WASM_USE_MALLOC_MOVABLE,          \
-  VAL_HFI_EMULATION                     \
+  VAL_HFI_EMULATION,                    \
+  VAL_WASM_CHECK_SHADOW_MEMORY          \
 }
 
 // Function to check configuration compatibility between binary and runtime

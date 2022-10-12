@@ -202,7 +202,7 @@ static void check_if_hfi_emulate_reserved_lower_4_has_run() {
   // If lower 4GB is reserved we should be able to access it
   // access some pages in the lower 4GB below
   uint64_t* a = (uint64_t*) 0x12345600;
-  uint64_t* b = (uint64_t*) 0xfffffff0;
+  uint64_t* b = (uint64_t*) 0x5ffffff0;
   if (*a != 0 || *b != 0) {
     printf("Error: Lower 4GB not zero initialized");
     abort();
@@ -281,6 +281,13 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
   } else {
     chosen_max_pages = max_pages;
   }
+
+#ifdef HFI_EMULATION
+  const uint64_t hfi_emulation_max_pages = ((uint64_t)wasm_rt_hfi_emulate_reserve_lower4_end()) / WASM_PAGE_SIZE;
+  if (chosen_max_pages > hfi_emulation_max_pages) {
+    chosen_max_pages = hfi_emulation_max_pages;
+  }
+#endif
 
   if (chosen_max_pages < initial_pages) {
     return false;
@@ -410,7 +417,7 @@ void wasm_rt_deallocate_memory(wasm_rt_memory_t* memory) {
   }
 
   void* page_addr = (void*) wasm_rt_hfi_emulate_reserve_lower4_start();
-  const uint64_t alloc_size = ((uint64_t) 0x100000000) - wasm_rt_hfi_emulate_reserve_lower4_start();
+  const uint64_t alloc_size = ((uint64_t) wasm_rt_hfi_emulate_reserve_lower4_end()) - wasm_rt_hfi_emulate_reserve_lower4_start();
   memset(page_addr, 0, alloc_size);
 
   hfi_emulate_reserved_lower_4 = 1;

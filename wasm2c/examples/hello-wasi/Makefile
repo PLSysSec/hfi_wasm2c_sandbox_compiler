@@ -3,8 +3,10 @@ REPO_PATH=$(shell realpath ../../../..)
 WASI_SDK_ROOT=$(REPO_PATH)/wasi-sdk
 WABT_SRC_ROOT=$(REPO_PATH)/hfi_wasm2c_sandbox_compiler/
 
-WABT_BIN_ROOT=$(REPO_PATH)/hfi_wasm2c_sandbox_compiler/build_debug_guardpages
-WASM_SECURITY_FLAGS=-DWASM_USE_GUARD_PAGES
+WABT_BIN_CHOICE=build_debug_hfiemulate
+WASM_SECURITY_FLAGS=-DWASM_USE_HFI -DHFI_EMULATION
+
+WABT_BIN_ROOT=$(REPO_PATH)/hfi_wasm2c_sandbox_compiler/$(WABT_BIN_CHOICE)
 
 WASI_CLANG=$(WASI_SDK_ROOT)/bin/clang
 WASI_SYSROOT=$(WASI_SDK_ROOT)/share/wasi-sysroot
@@ -31,7 +33,10 @@ ALL_RESULTS=hello.wasm hello.wasm.c hello.so
 
 all: wasmrt $(ALL_RESULTS)
 
-wasmrt:
+$(WABT_BIN_ROOT):
+	cd $(REPO_PATH)/mybuild && make ../build_debug_hfiemulate_rr
+
+wasmrt: $(WABT_BIN_ROOT)
 	cd $(WABT_BIN_ROOT) && make -j$(shell nproc)
 
 clean:

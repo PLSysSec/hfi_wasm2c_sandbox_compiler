@@ -528,7 +528,7 @@ typedef struct wasm2c_configuration {
   VAL_WASM_USE_MMAP,                    \
   VAL_WASM_USE_MALLOC_IMMOVABLE,        \
   VAL_WASM_USE_MALLOC_MOVABLE,          \
-  VAL_HFI_EMULATION_RR                  \
+  VAL_HFI_EMULATION_RR,                 \
   VAL_HFI_EMULATION,                    \
   VAL_HFI_EMULATION2,                   \
   VAL_HFI_EMULATION3,                   \

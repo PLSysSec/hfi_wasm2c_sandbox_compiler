@@ -61,6 +61,34 @@ static cell_data_t unpack(wasm2c_shadow_memory_cell_t byte) {
   return ret;
 }
 
+static void report_error(wasm_rt_memory_t* mem, const char* func_name, const char* error_message, uint32_t index, cell_data_t* data) {
+  const char* alloc_state_string = "<>";
+  const char* used_state_string = "<>";
+  const char* own_state_string = "<>";
+
+#ifdef WASM_CHECK_SHADOW_MEMORY_LOG
+  if(mem->shadow_memory.log_fp != NULL) {
+    wasm2c_shadow_memory_closelog(mem);
+  }
+#endif
+
+  if (data != 0) {
+    alloc_state_string = alloc_state_strings[(int) data->alloc_state];
+    used_state_string = used_state_strings[(int) data->used_state];
+    own_state_string = own_state_strings[(int) data->own_state];
+  }
+  const uint64_t used_mem = wasm2c_shadow_memory_print_total_allocations(mem);
+  printf("WASM Shadow memory ASAN failed! %s (Func: %s, Index: %" PRIu32 ") (Cell state: %s, %s, %s) (Allocated mem: %" PRIu64 ")!\n",
+    error_message, func_name, index,
+    alloc_state_string, used_state_string, own_state_string,
+    used_mem
+  );
+  fflush(stdout);
+  #ifndef WASM_CHECK_SHADOW_MEMORY_NO_ABORT_ON_FAIL
+    wasm_rt_trap(WASM_RT_TRAP_SHADOW_MEM);
+  #endif
+}
+
 void wasm2c_shadow_memory_create(wasm_rt_memory_t* mem) {
   uint64_t new_size = ((uint64_t) mem->size) * sizeof(wasm2c_shadow_memory_cell_t);
   mem->shadow_memory.data = (wasm2c_shadow_memory_cell_t*) calloc(new_size, 1);
@@ -68,6 +96,13 @@ void wasm2c_shadow_memory_create(wasm_rt_memory_t* mem) {
   mem->shadow_memory.data_size = new_size;
   mem->shadow_memory.allocation_sizes_map = new std::map<uint32_t, uint32_t>;
   mem->shadow_memory.heap_base = 0;
+
+#ifdef WASM_CHECK_SHADOW_MEMORY_LOG
+  mem->shadow_memory.log_fp = fopen("/tmp/wasm_shadow_log.txt", "w");
+  if(mem->shadow_memory.log_fp == NULL) {
+    report_error(mem, "<LOG_SETUP>", "Could not open log file", 0, nullptr);
+  }
+#endif
 }
 
 void wasm2c_shadow_memory_expand(wasm_rt_memory_t* mem) {
@@ -114,28 +149,6 @@ void wasm2c_shadow_memory_reserve(wasm_rt_memory_t* mem, uint32_t ptr, uint32_t 
       data->alloc_state = ALLOC_STATE::ALLOCED;
     }
   });
-}
-
-static void report_error(wasm_rt_memory_t* mem, const char* func_name, const char* error_message, uint32_t index, cell_data_t* data) {
-  const char* alloc_state_string = "<>";
-  const char* used_state_string = "<>";
-  const char* own_state_string = "<>";
-
-  if (data != 0) {
-    alloc_state_string = alloc_state_strings[(int) data->alloc_state];
-    used_state_string = used_state_strings[(int) data->used_state];
-    own_state_string = own_state_strings[(int) data->own_state];
-  }
-  const uint64_t used_mem = wasm2c_shadow_memory_print_total_allocations(mem);
-  printf("WASM Shadow memory ASAN failed! %s (Func: %s, Index: %" PRIu32 ") (Cell state: %s, %s, %s) (Allocated mem: %" PRIu64 ")!\n",
-    error_message, func_name, index,
-    alloc_state_string, used_state_string, own_state_string,
-    used_mem
-  );
-  fflush(stdout);
-  #ifndef WASM_CHECK_SHADOW_MEMORY_NO_ABORT_ON_FAIL
-    wasm_rt_trap(WASM_RT_TRAP_SHADOW_MEM);
-  #endif
 }
 
 void wasm2c_shadow_memory_dlmalloc(wasm_rt_memory_t* mem, uint32_t ptr, uint32_t ptr_size) {
@@ -358,4 +371,37 @@ WASM2C_FUNC_EXPORT uint64_t wasm2c_shadow_memory_print_total_allocations(wasm_rt
     used_memory += i->second;
   }
   return used_memory;
+}
+
+void wasm2c_shadow_memory_closelog(wasm_rt_memory_t* mem) {
+#ifdef WASM_CHECK_SHADOW_MEMORY_LOG
+  if(mem->shadow_memory.log_fp != NULL) {
+    fclose(mem->shadow_memory.log_fp);
+    mem->shadow_memory.log_fp = NULL;
+  }
+#endif
+}
+
+void wasm2c_shadow_memory_logload(wasm_rt_memory_t* mem,
+                                         const char* func_name,
+                                         uint32_t ptr,
+                                         uint32_t ptr_size,
+                                         uint64_t data) {
+#ifdef WASM_CHECK_SHADOW_MEMORY_LOG
+  if (mem->shadow_memory.log_fp != NULL){
+    fprintf(mem->shadow_memory.log_fp, "Load [%" PRIu32 ", %" PRIu32 ") = %" PRIu64 "\n", ptr, ptr+ptr_size, data);
+  }
+#endif
+}
+
+void wasm2c_shadow_memory_logstore(wasm_rt_memory_t* mem,
+                                          const char* func_name,
+                                          uint32_t ptr,
+                                          uint32_t ptr_size,
+                                          uint64_t data) {
+#ifdef WASM_CHECK_SHADOW_MEMORY_LOG
+  if (mem->shadow_memory.log_fp != NULL){
+    fprintf(mem->shadow_memory.log_fp, "Store [%" PRIu32 ", %" PRIu32 ") = %" PRIu64 "\n", ptr, ptr+ptr_size, data);
+  }
+#endif
 }

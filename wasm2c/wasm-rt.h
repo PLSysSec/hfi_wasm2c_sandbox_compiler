@@ -166,6 +166,9 @@ typedef struct {
   size_t data_size;
   void* allocation_sizes_map;
   uint32_t heap_base;
+#ifdef WASM_CHECK_SHADOW_MEMORY_LOG
+  FILE* log_fp;
+#endif
 } wasm2c_shadow_memory_t;
 
 /** A Memory object. */
@@ -581,6 +584,19 @@ WASM2C_FUNC_EXPORT extern void wasm2c_shadow_memory_print_allocations(
 // Print the size of allocations currently active
 WASM2C_FUNC_EXPORT uint64_t
 wasm2c_shadow_memory_print_total_allocations(wasm_rt_memory_t* mem);
+
+extern void wasm2c_shadow_memory_closelog(wasm_rt_memory_t* mem);
+extern void wasm2c_shadow_memory_logload(wasm_rt_memory_t* mem,
+                                         const char* func_name,
+                                         uint32_t ptr,
+                                         uint32_t ptr_size,
+                                         uint64_t data);
+extern void wasm2c_shadow_memory_logstore(wasm_rt_memory_t* mem,
+                                          const char* func_name,
+                                          uint32_t ptr,
+                                          uint32_t ptr_size,
+                                          uint64_t data);
+
 
 #ifdef __cplusplus
 }

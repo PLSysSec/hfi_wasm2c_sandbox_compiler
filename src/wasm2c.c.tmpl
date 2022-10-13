@@ -87,6 +87,16 @@ void WASM2C_MALLOC_FAIL_CALLBACK(u32 ptr_size);
 #  define WASM2C_SHADOW_MEMORY_DLMALLOC(mem, ptr, ptr_size)         wasm2c_shadow_memory_dlmalloc(mem, ptr, ptr_size)
 #  define WASM2C_SHADOW_MEMORY_DLFREE(mem, ptr)                     wasm2c_shadow_memory_dlfree(mem, ptr)
 #  define WASM2C_SHADOW_MEMORY_MARK_GLOBALS_HEAP_BOUNDARY(mem, ptr) wasm2c_shadow_memory_mark_globals_heap_boundary(mem, ptr)
+#  define WASM2C_SHADOW_MEMORY_LOGLOAD(mem, func_name, ptr, ptr_size, data) { \
+  uint64_t logmemcopy = 0;                                                    \
+  memcpy(&logmemcopy, &(data), sizeof(data));                                 \
+  wasm2c_shadow_memory_logload(mem, func_name, ptr, ptr_size, logmemcopy);    \
+}
+#  define WASM2C_SHADOW_MEMORY_LOGSTORE(mem, func_name, ptr, ptr_size, data) { \
+  uint64_t logmemcopy = 0;                                                     \
+  memcpy(&logmemcopy, &(data), sizeof(data));                                  \
+  wasm2c_shadow_memory_logstore(mem, func_name, ptr, ptr_size, logmemcopy);    \
+}
 #else
 #  define WASM2C_SHADOW_MEMORY_LOAD(mem, func_name, ptr, ptr_size)
 #  define WASM2C_SHADOW_MEMORY_STORE(mem, func_name, ptr, ptr_size)
@@ -94,6 +104,8 @@ void WASM2C_MALLOC_FAIL_CALLBACK(u32 ptr_size);
 #  define WASM2C_SHADOW_MEMORY_DLMALLOC(mem, ptr, ptr_size)
 #  define WASM2C_SHADOW_MEMORY_DLFREE(mem, ptr)
 #  define WASM2C_SHADOW_MEMORY_MARK_GLOBALS_HEAP_BOUNDARY(mem, ptr)
+#  define WASM2C_SHADOW_MEMORY_LOGLOAD(mem, func_name, ptr, ptr_size, data)
+#  define WASM2C_SHADOW_MEMORY_LOGSTORE(mem, func_name, ptr, ptr_size, data)
 #endif
 
 #ifdef WASM_USE_BOUNDS_CHECKS
@@ -137,6 +149,7 @@ static inline void load_data(void *dest, const void *src, size_t n) {
     act_t result;                                                                        \
     memcpy(&result, MEM_ACCESS_REF(mem, addr), sizeof(act_t));                           \
     WASM2C_SHADOW_MEMORY_LOAD(mem, func_name, addr, sizeof(act_t));                      \
+    WASM2C_SHADOW_MEMORY_LOGLOAD(mem, func_name, addr, sizeof(act_t), result);           \
     return (wasmrep_t)(signed_wasmrep_t)result;                                          \
   }
 
@@ -146,6 +159,7 @@ static inline void load_data(void *dest, const void *src, size_t n) {
     act_t wrapped = (act_t)value;                                                                    \
     memcpy(MEM_ACCESS_REF(mem, addr), &wrapped, sizeof(act_t));                                      \
     WASM2C_SHADOW_MEMORY_STORE(mem, func_name, addr, sizeof(act_t));                                 \
+    WASM2C_SHADOW_MEMORY_LOGSTORE(mem, func_name, addr, sizeof(act_t), wrapped);                     \
   }
 
 #define DEFINE_HFI_LOAD(name, act_t, signed_wasmrep_t, wasmrep_t)                        \
@@ -154,6 +168,7 @@ static inline void load_data(void *dest, const void *src, size_t n) {
     act_t out_result;                                                                    \
     hfi_mov1_load_anytype(MEM_ACCESS_REF(mem, addr), out_result);                        \
     WASM2C_SHADOW_MEMORY_LOAD(mem, func_name, addr, sizeof(act_t));                      \
+    WASM2C_SHADOW_MEMORY_LOGLOAD(mem, func_name, addr, sizeof(act_t), out_result);       \
     return (wasmrep_t)(signed_wasmrep_t)out_result;                                      \
   }
 
@@ -163,6 +178,7 @@ static inline void load_data(void *dest, const void *src, size_t n) {
     act_t wrapped = (act_t)value;                                                                    \
     hfi_mov1_store_anytype(MEM_ACCESS_REF(mem, addr), wrapped);                                      \
     WASM2C_SHADOW_MEMORY_STORE(mem, func_name, addr, sizeof(act_t));                                 \
+    WASM2C_SHADOW_MEMORY_LOGSTORE(mem, func_name, addr, sizeof(act_t), wrapped);                     \
   }
 #endif
 

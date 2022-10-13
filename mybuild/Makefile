@@ -18,7 +18,7 @@ PARALLEL_COUNT=$(shell nproc)
 ../build_debug_hfiemulate2:
 	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Debug -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION2_ENABLE=ON
 ../build_debug_hfiemulate2_nouvwasi:
-	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Debug -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION2_ENABLE=ON -DWASM_NO_UVWASI
+	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Debug -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION2_ENABLE=ON -DWASM_NO_UVWASI=ON
 ../build_debug_hfiemulate3:
 	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Debug -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION3_ENABLE=ON
 
@@ -37,7 +37,7 @@ PARALLEL_COUNT=$(shell nproc)
 ../build_release_hfiemulate2:
 	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Release -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION2_ENABLE=ON
 ../build_release_hfiemulate2_nouvwasi:
-	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Release -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION2_ENABLE=ON -DWASM_NO_UVWASI
+	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Release -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION2_ENABLE=ON -DWASM_NO_UVWASI=ON
 ../build_release_hfiemulate3:
 	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Release -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION3_ENABLE=ON
 

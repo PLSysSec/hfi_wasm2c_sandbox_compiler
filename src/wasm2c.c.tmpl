@@ -132,7 +132,7 @@ static inline void load_data(void *dest, const void *src, size_t n) {
   memcpy(dest, src, n);
 }
 
-#define LOAD_DATA(m, o, i, s) { load_data((void*)o, i, s); \
+#define LOAD_DATA(m, o, i, s) { load_data(&(m.data[o]), i, s); \
   WASM2C_SHADOW_MEMORY_RESERVE(&m, o, s);                       \
   WASM2C_SHADOW_MEMORY_STORE(&m, "GlobalDataLoad", o, s);       \
 }

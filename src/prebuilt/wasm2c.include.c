@@ -135,7 +135,7 @@ const char SECTION_NAME(declarations)[] =
 "  memcpy(dest, src, n);\n"
 "}\n"
 "\n"
-"#define LOAD_DATA(m, o, i, s) { load_data((void*)o, i, s); \\\n"
+"#define LOAD_DATA(m, o, i, s) { load_data(&(m.data[o]), i, s); \\\n"
 "  WASM2C_SHADOW_MEMORY_RESERVE(&m, o, s);                       \\\n"
 "  WASM2C_SHADOW_MEMORY_STORE(&m, \"GlobalDataLoad\", o, s);       \\\n"
 "}\n"

@@ -77,6 +77,8 @@ option(HFI_EMULATION_RR_ENABLE "Build with hfi emulation rr on" OFF)
 option(HFI_EMULATION_ENABLE "Build with hfi emulation on" OFF)
 option(HFI_EMULATION2_ENABLE "Build with hfi emulation2 on" OFF)
 option(HFI_EMULATION3_ENABLE "Build with hfi emulation3 on" OFF)
+option(WASM_CHECK_SHADOW_MEMORY_ENABLE "Build with WASM_CHECK_SHADOW_MEMORY on" OFF)
+option(WASM_CHECK_SHADOW_MEMORY_LOG_ENABLE "Build with WASM_CHECK_SHADOW_MEMORY_LOG on" OFF)
 
 set(WasmSafetyEnforcementVals WASM_USE_GUARD_PAGES WASM_USE_BOUNDS_CHECKS WASM_USE_MASKING WASM_USE_HFI)
 set(WasmSafetyEnforcement "" CACHE STRING "WasmSafetyEnforcement chosen by the user at CMake configure time")
@@ -108,6 +110,14 @@ endif()
 
 if (HFI_EMULATION3_ENABLE)
   add_compile_definitions(HFI_EMULATION3)
+endif()
+
+if (WASM_CHECK_SHADOW_MEMORY_ENABLE)
+  add_compile_definitions(WASM_CHECK_SHADOW_MEMORY)
+endif()
+
+if (WASM_CHECK_SHADOW_MEMORY_LOG_ENABLE)
+  add_compile_definitions(WASM_CHECK_SHADOW_MEMORY_LOG)
 endif()
 
 if (MSVC)

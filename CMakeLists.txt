@@ -74,6 +74,7 @@ option(WERROR "Build with warnings as errors" OFF)
 # Only a handful of syscalls are supported at this point.
 option(WITH_WASI "Build WASI support via uvwasi" OFF)
 option(HFI_EMULATION_ENABLE "Build with hfi emulation on" OFF)
+option(HFI_EMULATION_RR_ENABLE "Build with hfi emulation rr on" OFF)
 option(HFI_EMULATION2_ENABLE "Build with hfi emulation2 on" OFF)
 
 set(WasmSafetyEnforcementVals WASM_USE_GUARD_PAGES WASM_USE_BOUNDS_CHECKS WASM_USE_MASKING WASM_USE_HFI)
@@ -94,6 +95,10 @@ endif()
 
 if (HFI_EMULATION_ENABLE)
   add_compile_definitions(HFI_EMULATION)
+endif()
+
+if (HFI_EMULATION_RR_ENABLE)
+  add_compile_definitions(HFI_EMULATION_RR)
 endif()
 
 if (HFI_EMULATION2_ENABLE)

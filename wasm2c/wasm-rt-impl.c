@@ -328,11 +328,15 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
       break;
     }
   }
-
+#ifdef HFI_EMULATION
+  memory->allocated_dummy = addr;
+  addr = 0;
+#else
   if (!addr) {
     os_print_last_error("os_mmap failed.");
     return false;
   }
+#endif
 
 # ifndef WASM_USE_HFI
   int ret = os_mmap_commit(addr, byte_length, MMAP_PROT_READ | MMAP_PROT_WRITE);
@@ -406,7 +410,11 @@ void wasm_rt_deallocate_memory(wasm_rt_memory_t* memory) {
 #ifdef WASM_USE_MMAP
   const uint64_t heap_reserve_size =
       compute_heap_reserve_space(memory->max_pages);
-  os_munmap(memory->data, heap_reserve_size);
+# ifdef HFI_EMULATION
+    os_munmap(memory->allocated_dummy, heap_reserve_size);
+# else
+    os_munmap(memory->data, heap_reserve_size);
+# endif
 #else
   free(memory->data);
 #endif

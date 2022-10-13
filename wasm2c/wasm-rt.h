@@ -197,6 +197,9 @@ typedef struct {
 #ifdef WASM_USE_HFI
   hfi_sandbox hfi_config;
 #endif
+#ifdef HFI_EMULATION
+  uint8_t* allocated_dummy;
+#endif
 } wasm_rt_memory_t;
 
 /** A Table object. */

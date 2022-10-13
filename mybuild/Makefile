@@ -19,6 +19,8 @@ PARALLEL_COUNT=$(shell nproc)
 	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Debug -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION2_ENABLE=ON
 ../build_debug_hfiemulate2_nouvwasi:
 	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Debug -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION2_ENABLE=ON -DWASM_NO_UVWASI
+../build_debug_hfiemulate3:
+	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Debug -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION3_ENABLE=ON
 
 ../build_release_guardpages:
 	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Release -DWasmSafetyEnforcement=WASM_USE_GUARD_PAGES
@@ -36,8 +38,10 @@ PARALLEL_COUNT=$(shell nproc)
 	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Release -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION2_ENABLE=ON
 ../build_release_hfiemulate2_nouvwasi:
 	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Release -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION2_ENABLE=ON -DWASM_NO_UVWASI
+../build_release_hfiemulate3:
+	cmake -S ../ -B $@ -DCMAKE_BUILD_TYPE=Release -DWasmSafetyEnforcement=WASM_USE_HFI -DHFI_EMULATION3_ENABLE=ON
 
-build: ../build_release_guardpages ../build_release_boundschecks ../build_release_masking ../build_release_hfi ../build_release_hfiemulate ../build_release_hfiemulate_rr ../build_release_hfiemulate2 ../build_release_hfiemulate2_nouvwasi
+build: ../build_release_guardpages ../build_release_boundschecks ../build_release_masking ../build_release_hfi ../build_release_hfiemulate ../build_release_hfiemulate_rr ../build_release_hfiemulate2 ../build_release_hfiemulate2_nouvwasi ../build_release_hfiemulate3
 	cd ../build_release_guardpages && make -j$(PARALLEL_COUNT)
 	cd ../build_release_boundschecks && make -j$(PARALLEL_COUNT)
 	cd ../build_release_masking && make -j$(PARALLEL_COUNT)
@@ -46,8 +50,9 @@ build: ../build_release_guardpages ../build_release_boundschecks ../build_releas
 	cd ../build_release_hfiemulate_rr && make -j$(PARALLEL_COUNT)
 	cd ../build_release_hfiemulate2 && make -j$(PARALLEL_COUNT)
 	cd ../build_release_hfiemulate2_nouvwasi && make -j$(PARALLEL_COUNT)
+	cd ../build_release_hfiemulate3 && make -j$(PARALLEL_COUNT)
 
-build_debug: ../build_debug_guardpages ../build_debug_boundschecks ../build_debug_masking ../build_debug_hfi ../build_debug_hfiemulate ../build_debug_hfiemulate_rr ../build_debug_hfiemulate2 ../build_debug_hfiemulate2_nouvwasi
+build_debug: ../build_debug_guardpages ../build_debug_boundschecks ../build_debug_masking ../build_debug_hfi ../build_debug_hfiemulate ../build_debug_hfiemulate_rr ../build_debug_hfiemulate2 ../build_debug_hfiemulate2_nouvwasi ../build_debug_hfiemulate3
 	cd ../build_debug_guardpages && make -j$(PARALLEL_COUNT)
 	cd ../build_debug_boundschecks && make -j$(PARALLEL_COUNT)
 	cd ../build_debug_masking && make -j$(PARALLEL_COUNT)
@@ -56,6 +61,7 @@ build_debug: ../build_debug_guardpages ../build_debug_boundschecks ../build_debu
 	cd ../build_debug_hfiemulate_rr && make -j$(PARALLEL_COUNT)
 	cd ../build_debug_hfiemulate2 && make -j$(PARALLEL_COUNT)
 	cd ../build_debug_hfiemulate2_nouvwasi && make -j$(PARALLEL_COUNT)
+	cd ../build_debug_hfiemulate3 && make -j$(PARALLEL_COUNT)
 
 clean:
 	rm -rf ../build_debug_*

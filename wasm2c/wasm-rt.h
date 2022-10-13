@@ -434,8 +434,10 @@ typedef struct wasm2c_configuration {
   uint8_t bit_WASM_USE_MMAP;
   uint8_t bit_WASM_USE_MALLOC_IMMOVABLE;
   uint8_t bit_WASM_USE_MALLOC_MOVABLE;
+  uint8_t bit_HFI_EMULATION_RR;
   uint8_t bit_HFI_EMULATION;
   uint8_t bit_HFI_EMULATION2;
+  uint8_t bit_HFI_EMULATION3;
   uint8_t bit_WASM_CHECK_SHADOW_MEMORY;
 } wasm2c_configuration;
 
@@ -487,6 +489,12 @@ typedef struct wasm2c_configuration {
 #define VAL_WASM_USE_MALLOC_MOVABLE 0
 #endif
 
+#ifdef HFI_EMULATION_RR
+#define VAL_HFI_EMULATION_RR 1
+#else
+#define VAL_HFI_EMULATION_RR 0
+#endif
+
 #ifdef HFI_EMULATION
 #define VAL_HFI_EMULATION 1
 #else
@@ -497,6 +505,12 @@ typedef struct wasm2c_configuration {
 #define VAL_HFI_EMULATION2 1
 #else
 #define VAL_HFI_EMULATION2 0
+#endif
+
+#ifdef HFI_EMULATION3
+#define VAL_HFI_EMULATION3 1
+#else
+#define VAL_HFI_EMULATION3 0
 #endif
 
 #ifdef WASM_CHECK_SHADOW_MEMORY
@@ -514,8 +528,10 @@ typedef struct wasm2c_configuration {
   VAL_WASM_USE_MMAP,                    \
   VAL_WASM_USE_MALLOC_IMMOVABLE,        \
   VAL_WASM_USE_MALLOC_MOVABLE,          \
+  VAL_HFI_EMULATION_RR                  \
   VAL_HFI_EMULATION,                    \
   VAL_HFI_EMULATION2,                   \
+  VAL_HFI_EMULATION3,                   \
   VAL_WASM_CHECK_SHADOW_MEMORY          \
 }
 

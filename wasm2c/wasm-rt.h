@@ -262,6 +262,7 @@ typedef uint32_t (*add_wasm2c_callback_t)(
     wasm_rt_elem_target_class_t func_class);
 typedef void (*remove_wasm2c_callback_t)(void* sbx_ptr, uint32_t callback_idx);
 typedef wasm_rt_memory_t* (*get_wasm2c_memory_t)(void* sbx_ptr);
+typedef void (*init_wasm2c_sandbox_t)(void* sbx_ptr);
 
 typedef struct wasm2c_sandbox_funcs_t {
   wasm_rt_sys_init_t wasm_rt_sys_init;
@@ -275,6 +276,7 @@ typedef struct wasm2c_sandbox_funcs_t {
   add_wasm2c_callback_t add_wasm2c_callback;
   remove_wasm2c_callback_t remove_wasm2c_callback;
   get_wasm2c_memory_t get_wasm2c_memory;
+  init_wasm2c_sandbox_t init_wasm2c_sandbox;
 } wasm2c_sandbox_funcs_t;
 
 /** Stop execution immediately and jump back to the call to `wasm_rt_try`.

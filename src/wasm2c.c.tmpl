@@ -445,6 +445,11 @@ static void init_uvwasi_state(void* aSbx, uvwasi_t * uvwasi_p) {
 }
 #endif
 
+static void init_wasm2c_sandbox(void* aSbx) {
+  wasm2c_sandbox_t* const sbx = (wasm2c_sandbox_t* const) aSbx;
+  w2c___wasm_call_ctors(sbx);
+}
+
 FUNC_EXPORT wasm2c_sandbox_funcs_t WASM_CURR_ADD_PREFIX(get_wasm2c_sandbox_info)() {
   wasm2c_sandbox_funcs_t ret;
   ret.wasm_rt_sys_init = &wasm_rt_sys_init;
@@ -458,5 +463,6 @@ FUNC_EXPORT wasm2c_sandbox_funcs_t WASM_CURR_ADD_PREFIX(get_wasm2c_sandbox_info)
   ret.add_wasm2c_callback = &add_wasm2c_callback;
   ret.remove_wasm2c_callback = &remove_wasm2c_callback;
   ret.get_wasm2c_memory = &get_wasm2c_memory;
+  ret.init_wasm2c_sandbox = &init_wasm2c_sandbox;
   return ret;
 }

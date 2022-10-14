@@ -85,6 +85,7 @@ int main(int argc, char const* argv[]) {
   sandbox_info.init_uvwasi_state(sandbox, &local_uvwasi_state);
 #endif
 
+  sandbox_info.init_wasm2c_sandbox(sandbox);
   w2c__start(sandbox);
 
 #ifdef WASM_USE_HFI

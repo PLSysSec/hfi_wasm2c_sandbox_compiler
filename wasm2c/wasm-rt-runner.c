@@ -183,6 +183,8 @@ int main(int argc, char const* argv[]) {
   sandbox_info.init_uvwasi_state(sandbox, &local_uvwasi_state);
 #endif
 
+  sandbox_info.init_wasm2c_sandbox(sandbox);
+
   wasm2c_start_func_t start_func =
       (wasm2c_start_func_t)symbol_lookup(library, "w2c__start");
   start_func(sandbox);

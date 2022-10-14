@@ -3,8 +3,8 @@ ROOT_PATH=$(shell realpath ../../../..)
 WASI_SDK_ROOT=$(ROOT_PATH)/wasi-sdk
 WABT_SRC_ROOT=$(ROOT_PATH)/hfi_wasm2c_sandbox_compiler/
 
-WABT_BIN_CHOICE=build_debug_hfiemulate2_shadowlog
-WASM_SECURITY_FLAGS=-DWASM_USE_HFI -DHFI_EMULATION2 -DWASM_CHECK_SHADOW_MEMORY -DWASM_CHECK_SHADOW_MEMORY_LOG
+WABT_BIN_CHOICE=build_debug_hfiemulate2
+WASM_SECURITY_FLAGS=-DWASM_USE_HFI -DHFI_EMULATION2
 
 WABT_BIN_ROOT=$(WABT_SRC_ROOT)/$(WABT_BIN_CHOICE)
 
@@ -18,7 +18,7 @@ WASM_CFLAGS=-Wl,--export-all -Wl,--global-base=150000 -Wl,-z,stack-size=1048576 
 WASM2C=$(WABT_BIN_ROOT)/wasm2c
 
 WASM2C_RUNTIME_PATH=$(WABT_SRC_ROOT)/wasm2c/
-WASM2C_RUNTIME_FILES=$(addprefix $(WASM2C_RUNTIME_PATH), wasm-rt-impl.c wasm-rt-os-unix.c uvwasi-rt.c)
+WASM2C_RUNTIME_FILES=$(addprefix $(WASM2C_RUNTIME_PATH), wasm-rt-impl.c wasm-rt-os-unix.c uvwasi-rt.c wasm-rt-runner-static.c)
 WASM2C_SHADOW_RUNTIME_FILES=$(addprefix $(WASM2C_RUNTIME_PATH), wasm-rt-shadow.cpp)
 
 HFIPATH=$(ROOT_PATH)/hw_isol_gem5/tests/test-progs/hfi/
@@ -30,7 +30,7 @@ DEPS=-L$(WABT_BIN_ROOT)/_deps/libuv-build -L$(WABT_BIN_ROOT)/third_party/uvwasi
 
 LIBS=-luvwasi_a -luv -lpthread
 
-ALL_RESULTS=hello.wasm hello.wasm.c hello.so
+ALL_RESULTS=hello.wasm hello.wasm.c hello
 
 all: wasmrt $(ALL_RESULTS)
 
@@ -49,16 +49,16 @@ hello.wasm: hello.c
 hello.wasm.c: hello.wasm
 	$(WASM2C) hello.wasm -o hello.wasm.c
 
-hello.so: hello.wasm.c $(WASM2C_RUNTIME_FILES)
-	$(CXX) -g -c -fPIC $(WASM_SECURITY_FLAGS) $(WASM2C_SHADOW_RUNTIME_FILES) $(INCS)
-	$(CC)  -g -c -fPIC $(WASM_SECURITY_FLAGS) hello.wasm.c $(WASM2C_RUNTIME_FILES) $(INCS)
-	$(CXX) -g -shared -fPIC $(WASM_SECURITY_FLAGS) *.o -o hello.so $(DEPS) $(LIBS)
+hello: hello.wasm.c $(WASM2C_RUNTIME_FILES)
+	$(CXX) -g -c $(WASM_SECURITY_FLAGS) $(WASM2C_SHADOW_RUNTIME_FILES) $(INCS)
+	$(CC)  -g -c $(WASM_SECURITY_FLAGS) hello.wasm.c $(WASM2C_RUNTIME_FILES) $(INCS)
+	$(CXX) -g $(WASM_SECURITY_FLAGS) *.o -o hello $(DEPS) $(LIBS)
 
-run: hello.so
-	$(WASM2C_RUNNER) $(PWD)/hello.so
+run: hello
+	$(PWD)/hello
 
-run-gdb: hello.so
-	gdb --args $(WASM2C_RUNNER) $(PWD)/hello.so
+run-gdb: hello
+	gdb --args $(PWD)/hello
 
-run-rr: hello.so
-	rr record $(WASM2C_RUNNER) $(PWD)/hello.so
+run-rr: hello
+	rr record $(PWD)/hello

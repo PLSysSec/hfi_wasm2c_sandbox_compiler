@@ -175,7 +175,7 @@ uint32_t Z_wasi_snapshot_preview1Z_fd_fdstat_set_rightsZ_iijj(wasm_sandbox_wasi_
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_path_filestat_set_timesZ_iiiiii(wasm_sandbox_wasi_data* wp, uint32_t fd, uint32_t flags, wasm_ptr path, uint32_t path_len, uint64_t atim, uint64_t mtim, uint32_t fst_flags)
+uint32_t Z_wasi_snapshot_preview1Z_path_filestat_set_timesZ_iiiiijji(wasm_sandbox_wasi_data* wp, uint32_t fd, uint32_t flags, wasm_ptr path, uint32_t path_len, uint64_t atim, uint64_t mtim, uint32_t fst_flags)
 {
     uvwasi_errno_t ret = uvwasi_path_filestat_set_times(wp->uvwasi, fd, flags, (char*)MEMACCESS(path), path_len, atim, mtim, fst_flags);
     return ret;
@@ -247,7 +247,7 @@ uint32_t Z_wasi_snapshot_preview1Z_fd_filestat_set_sizeZ_iij(wasm_sandbox_wasi_d
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_fd_filestat_set_timesZ_iiiiijji(wasm_sandbox_wasi_data* wp, uint32_t fd, uint64_t atim, uint64_t mtim, uint32_t fst_flags)
+uint32_t Z_wasi_snapshot_preview1Z_fd_filestat_set_timesZ_iijji(wasm_sandbox_wasi_data* wp, uint32_t fd, uint64_t atim, uint64_t mtim, uint32_t fst_flags)
 {
     uvwasi_errno_t ret = uvwasi_fd_filestat_set_times(wp->uvwasi, fd, atim, mtim, fst_flags);
     return ret;
@@ -319,7 +319,7 @@ uint32_t Z_wasi_snapshot_preview1Z_path_symlinkZ_iiiiii(wasm_sandbox_wasi_data* 
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_path_renameZ_iii(wasm_sandbox_wasi_data* wp, uint32_t old_fd, wasm_ptr old_path,
+uint32_t Z_wasi_snapshot_preview1Z_path_renameZ_iiiiiii(wasm_sandbox_wasi_data* wp, uint32_t old_fd, wasm_ptr old_path,
 	uint32_t old_path_len, uint32_t new_fd, wasm_ptr new_path, uint32_t new_path_len)
 {
     uvwasi_errno_t ret = uvwasi_path_rename(wp->uvwasi, old_fd, (char*)MEMACCESS(old_path), old_path_len,
@@ -493,13 +493,13 @@ uint32_t Z_wasi_snapshot_preview1Z_clock_time_getZ_iiji(wasm_sandbox_wasi_data* 
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_random_getZiii(wasm_sandbox_wasi_data* wp, wasm_ptr buf, uint32_t buf_len)
+uint32_t Z_wasi_snapshot_preview1Z_random_getZ_iii(wasm_sandbox_wasi_data* wp, wasm_ptr buf, uint32_t buf_len)
 {
     uvwasi_errno_t ret = uvwasi_random_get(wp->uvwasi, MEMACCESS(buf), buf_len);
     return ret;
 }
 
-uint32_t Z_wasi_snapshot_preview1Z_sched_yieldZ_i(wasm_sandbox_wasi_data* wp)
+uint32_t Z_wasi_snapshot_preview1Z_sched_yieldZ_iv(wasm_sandbox_wasi_data* wp)
 {
     uvwasi_errno_t ret = uvwasi_sched_yield(wp->uvwasi);
     return ret;
@@ -516,3 +516,24 @@ void Z_wasi_snapshot_preview1Z_proc_exitZ_vi(wasm_sandbox_wasi_data* wp, uint32_
     uvwasi_destroy(wp->uvwasi);
     exit(code);
 }
+
+#define WASI_PERM_ERROR 63
+#define WASI_DEFAULT_ERROR WASI_PERM_ERROR
+
+#define STUB_IMPORT_IMPL(ret, name, params, returncode) \
+  ret name params {                                     \
+    return returncode;                                  \
+  }
+
+STUB_IMPORT_IMPL(uint32_t,
+                 Z_wasi_snapshot_preview1Z_sock_recvZ_iiiiiii,
+                 (uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e, uint32_t f),
+                 WASI_DEFAULT_ERROR);
+STUB_IMPORT_IMPL(uint32_t,
+                 Z_wasi_snapshot_preview1Z_sock_sendZ_iiiiii,
+                 (uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e),
+                 WASI_DEFAULT_ERROR);
+STUB_IMPORT_IMPL(uint32_t,
+                 Z_wasi_snapshot_preview1Z_sock_shutdownZ_iii,
+                 (uint32_t a, uint32_t b),
+                 WASI_DEFAULT_ERROR);

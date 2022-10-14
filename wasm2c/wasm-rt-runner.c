@@ -8,7 +8,7 @@
 
 #include "wasm-rt.h"
 #ifndef WASM_NO_UVWASI
-#include "uvwasi.h"
+#include "uv-wasi-setup.inc.c"
 #endif
 
 #if defined(_WIN32)
@@ -97,42 +97,6 @@ typedef void (*void_void_t)();
 typedef wasm2c_sandbox_funcs_t (*get_info_func_t)();
 typedef void (*wasm2c_start_func_t)(void* sbx);
 
-#ifndef WASM_NO_UVWASI
-void init_uvwasi_local(uvwasi_t * local_uvwasi_state, int argc, char const * argv[])
-{
-    uvwasi_options_t init_options;
-
-    //pass in standard descriptors
-    init_options.in = 0;
-    init_options.out = 1;
-    init_options.err = 2;
-    init_options.fd_table_size = 3;
-
-    //pass in args and environement
-    extern const char ** environ;
-    init_options.argc = argc;
-    init_options.argv = argv;
-    init_options.envp = (const char **) environ;
-
-    //no sandboxing enforced, binary has access to everything user does
-    init_options.preopenc = 2;
-    init_options.preopens = calloc(2, sizeof(uvwasi_preopen_t));
-
-    init_options.preopens[0].mapped_path = "/";
-    init_options.preopens[0].real_path = "/";
-    init_options.preopens[1].mapped_path = "./";
-    init_options.preopens[1].real_path = ".";
-
-    init_options.allocator = NULL;
-
-    uvwasi_errno_t ret = uvwasi_init(local_uvwasi_state, &init_options);
-
-    if (ret != UVWASI_ESUCCESS) {
-        printf("uvwasi_init failed with error %d\n", ret);
-        exit(1);
-    }
-}
-#endif
 
 int main(int argc, char const* argv[]) {
   if (argc < 2) {

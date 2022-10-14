@@ -38,6 +38,7 @@ $(WABT_BIN_ROOT):
 	cd $(WABT_SRC_ROOT)/mybuild && make ../$(WABT_BIN_CHOICE)
 
 wasmrt: $(WABT_BIN_ROOT)
+	cd $(WABT_SRC_ROOT) && make update-wasm2c
 	cd $(WABT_BIN_ROOT) && make -j$(shell nproc)
 
 clean:

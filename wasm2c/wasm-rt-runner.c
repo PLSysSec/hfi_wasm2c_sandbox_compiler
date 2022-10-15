@@ -157,7 +157,12 @@ int main(int argc, char const* argv[]) {
   wasm_rt_hfi_disable();
 #endif
 
+  sandbox_info.destroy_wasm2c_sandbox(sandbox);
+
   free(info_func_name);
   close_lib(library);
+
+  fflush(stdout);
+  fflush(stderr);
   return 0;
 }

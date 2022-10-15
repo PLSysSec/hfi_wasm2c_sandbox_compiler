@@ -435,6 +435,9 @@ static void destroy_wasm2c_sandbox(void* aSbx) {
   cleanup_func_types(sbx);
   cleanup_table(sbx);
   wasm_rt_cleanup_wasi(&(sbx->wasi_data));
+#ifndef WASM_NO_UVWASI
+  uvwasi_destroy(sbx->wasi_data.uvwasi);
+#endif
   free(sbx);
 }
 

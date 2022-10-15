@@ -1,4 +1,3 @@
-#assumes wasi-sdk installed system wide in default location
 ROOT_PATH=$(shell realpath ../../../..)
 WASI_SDK_ROOT=$(ROOT_PATH)/wasi-sdk
 WABT_SRC_ROOT=$(ROOT_PATH)/hfi_wasm2c_sandbox_compiler/

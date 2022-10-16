@@ -533,7 +533,7 @@ endif()
   wabt_executable(
     NAME wasm2c-runner
     SOURCES wasm2c/wasm-rt-runner.c
-    LIBS ${LDL_LIB} -luv uvwasi_a
+    LIBS ${LDL_LIB} uv_a uvwasi_a
     INSTALL
   )
   target_include_directories(wasm2c-runner PUBLIC ${CMAKE_SOURCE_DIR}/../hw_isol_gem5/tests/test-progs/hfi/)

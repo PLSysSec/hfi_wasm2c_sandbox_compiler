@@ -30,13 +30,5 @@ int main(int argc, char * argv[]) {
     printf("removing /tmp/test.out\n");
     assert(!unlink("/tmp/test.out"));
 
-    printf("writing /tmp/a/test.out\n");
-    fp = fopen("/tmp/a/test.out", "w+");
-    assert(fp != NULL);
-    fprintf(fp,"hello filesystem\n");
-    fclose(fp);
-    printf("removing /tmp/a/test.out\n");
-    assert(!unlink("/tmp/a/test.out"));
-
     return 0;
 }

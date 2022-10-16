@@ -137,6 +137,21 @@ static inline void load_data(void *dest, const void *src, size_t n) {
   WASM2C_SHADOW_MEMORY_STORE(&m, "GlobalDataLoad", o, s);       \
 }
 
+#define wasm2c_asmmov_load_anytype(offset, data)                                                     \
+    asm("mov (%1), %0\n"                                                                             \
+    : "=r"(data)                                                                                     \
+    : "r"(offset)                                                                                    \
+    : "memory"                                                                                       \
+    );
+
+
+#define wasm2c_asmmov_store_anytype(offset, data)                                                    \
+    asm("mov %0, (%1)\n"                                                                             \
+    :                                                                                                \
+    : "r"(data), "r"(offset)                                                                         \
+    : "memory"                                                                                       \
+    );
+
 #define DEFINE_NONHFI_LOAD(name, act_t, signed_wasmrep_t, wasmrep_t)                     \
   static inline wasmrep_t name(wasm_rt_memory_t* mem, u64 addr, const char* func_name) { \
     MEMCHECK(mem, addr, act_t);                                                          \
@@ -152,6 +167,25 @@ static inline void load_data(void *dest, const void *src, size_t n) {
     MEMCHECK(mem, addr, act_t);                                                                      \
     act_t wrapped = (act_t)value;                                                                    \
     memcpy(MEM_ACCESS_REF(mem, addr), &wrapped, sizeof(act_t));                                      \
+    WASM2C_SHADOW_MEMORY_STORE(mem, func_name, addr, sizeof(act_t));                                 \
+    WASM2C_SHADOW_MEMORY_LOGSTORE(mem, func_name, addr, sizeof(act_t), wrapped);                     \
+  }
+
+#define DEFINE_NONHFI_ASM_LOAD(name, act_t, signed_wasmrep_t, wasmrep_t)                 \
+  static inline wasmrep_t name(wasm_rt_memory_t* mem, u64 addr, const char* func_name) { \
+    MEMCHECK(mem, addr, act_t);                                                          \
+    act_t out_result;                                                                    \
+    wasm2c_asmmov_load_anytype(MEM_ACCESS_REF(mem, addr), out_result);                   \
+    WASM2C_SHADOW_MEMORY_LOAD(mem, func_name, addr, sizeof(act_t));                      \
+    WASM2C_SHADOW_MEMORY_LOGLOAD(mem, func_name, addr, sizeof(act_t), out_result);       \
+    return (wasmrep_t)(signed_wasmrep_t)out_result;                                      \
+  }
+
+#define DEFINE_NONHFI_ASM_STORE(name, act_t, wasmrep_t)                                              \
+  static inline void name(wasm_rt_memory_t* mem, u64 addr, wasmrep_t value, const char* func_name) { \
+    MEMCHECK(mem, addr, act_t);                                                                      \
+    act_t wrapped = (act_t)value;                                                                    \
+    wasm2c_asmmov_store_anytype(MEM_ACCESS_REF(mem, addr), wrapped);                                 \
     WASM2C_SHADOW_MEMORY_STORE(mem, func_name, addr, sizeof(act_t));                                 \
     WASM2C_SHADOW_MEMORY_LOGSTORE(mem, func_name, addr, sizeof(act_t), wrapped);                     \
   }
@@ -180,6 +214,11 @@ static inline void load_data(void *dest, const void *src, size_t n) {
 
 #define DEFINE_LOAD DEFINE_HFI_LOAD
 #define DEFINE_STORE DEFINE_HFI_STORE
+
+#elseif defined(WASM_NONHFI_USE_ASM_MOVE)
+
+#define DEFINE_LOAD DEFINE_NONHFI_ASM_LOAD
+#define DEFINE_LOAD DEFINE_NONHFI_ASM_STORE
 
 #else
 

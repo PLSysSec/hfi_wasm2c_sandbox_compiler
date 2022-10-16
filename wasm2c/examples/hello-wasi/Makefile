@@ -9,7 +9,6 @@ WABT_BIN_ROOT=$(WABT_SRC_ROOT)/$(WABT_BIN_CHOICE)
 
 WASI_CLANG=$(WASI_SDK_ROOT)/bin/clang
 WASI_SYSROOT=$(WASI_SDK_ROOT)/share/wasi-sysroot
-WASM2C_RUNNER=$(WABT_BIN_ROOT)/wasm2c-runner
 
 #CFLAGS for compiling files to play nice with wasm2c and hfi emulation
 WASM_CFLAGS=-Wl,--export-all -Wl,--global-base=150000 -Wl,-z,stack-size=1048576 -Wl,--growable-table

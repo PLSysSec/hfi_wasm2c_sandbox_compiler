@@ -452,6 +452,21 @@ static u32 lookup_wasm2c_func_index(void* sbx_ptr, u32 param_count, u32 result_c
   return wasm_rt_register_func_type(&sbx->func_type_structs, &sbx->func_type_count, param_count, result_count, types);
 }
 
+#ifdef HFI_EMULATION
+static void fix_stack_first_wasmfile(wasm2c_sandbox_t* const sbx) {
+  if (sbx->w2c___stack_pointer > sbx->w2c___global_base) {
+    return;
+  }
+
+  // Put the temporary stack at the end of the wasm heap
+  uint64_t tmp_stack = ((uint64_t)sbx->w2c_memory.max_pages - 1) * 64 * 1024;
+  uint64_t stack_size = sbx->w2c___stack_pointer;
+  sbx->w2c___stack_pointer = tmp_stack;
+  uint32_t new_stack = w2c_malloc(sbx, stack_size);
+  sbx->w2c___stack_pointer = new_stack;
+}
+#endif
+
 static void* create_wasm2c_sandbox(uint32_t max_wasm_pages) {
   wasm2c_configuration code_config = wasm2c_configuration_init();
   wasm2c_configuration_check(&code_config, sizeof(code_config));
@@ -464,6 +479,9 @@ static void* create_wasm2c_sandbox(uint32_t max_wasm_pages) {
   init_globals(sbx);
   init_table(sbx);
   wasm_rt_init_wasi(&(sbx->wasi_data));
+#ifdef HFI_EMULATION
+  fix_stack_first_wasmfile(sbx);
+#endif
   init_module_starts();
   return sbx;
 }

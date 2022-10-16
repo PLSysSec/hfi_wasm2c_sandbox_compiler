@@ -1147,6 +1147,9 @@ void CWriter::WriteGlobalInitializers() {
     }
   }
 
+  bool var_stack_pointer_found = false;
+  bool var_g0_found = false;
+
   {
     Index global_index = 0;
     std::string memory_name = GetMainMemoryName();
@@ -1154,6 +1157,11 @@ void CWriter::WriteGlobalInitializers() {
       bool is_import = global_index < module_->num_global_imports;
       if (!is_import) {
         std::string global_name = GetGlobalVarName(global->name);
+        if (global_name == "w2c___stack_pointer") {
+          var_stack_pointer_found = true;
+        } else if (global_name == "w2c_g0") {
+          var_g0_found = true;
+        }
         std::string global_name_expr = "sbx->" + global_name;
         Write("WASM2C_SHADOW_MEMORY_RESERVE(&(sbx->", memory_name ,"), ", global_name_expr,  ", sizeof(", global_name_expr, "));", Newline());
         if (global_name == "w2c___heap_base") {
@@ -1166,6 +1174,19 @@ void CWriter::WriteGlobalInitializers() {
   }
 
   Write(CloseBrace(), Newline());
+
+  Write("#ifdef HFI_EMULATION", Newline());
+  Write("static uint32_t* wasm_get_stack_pointer_address(wasm2c_sandbox_t* const sbx)", OpenBrace());
+  if(var_stack_pointer_found) {
+    Write("return &(sbx->w2c___stack_pointer);", Newline());
+  } else if (var_g0_found) {
+    Write("return &(sbx->w2c_g0);", Newline());
+  } else {
+    Write("return 0;", Newline());
+  }
+  Write(CloseBrace(), Newline());
+  Write("#endif", Newline());
+
 }
 
 void CWriter::WriteGlobal(const Global& global, const std::string& name) {

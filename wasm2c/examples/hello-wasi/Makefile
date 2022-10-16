@@ -2,8 +2,8 @@ ROOT_PATH=$(shell realpath ../../../..)
 WASI_SDK_ROOT=$(ROOT_PATH)/wasi-sdk
 WABT_SRC_ROOT=$(ROOT_PATH)/hfi_wasm2c_sandbox_compiler/
 
-WABT_BIN_CHOICE=build_debug_hfiemulate2
-WASM_SECURITY_FLAGS=-DWASM_USE_HFI -DHFI_EMULATION2
+WABT_BIN_CHOICE=build_release_guardpages
+WASM_SECURITY_FLAGS=-DWASM_USE_HFI -DHFI_EMULATION
 
 WABT_BIN_ROOT=$(WABT_SRC_ROOT)/$(WABT_BIN_CHOICE)
 

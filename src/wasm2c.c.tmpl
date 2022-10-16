@@ -215,10 +215,10 @@ static inline void load_data(void *dest, const void *src, size_t n) {
 #define DEFINE_LOAD DEFINE_HFI_LOAD
 #define DEFINE_STORE DEFINE_HFI_STORE
 
-#elseif defined(WASM_NONHFI_USE_ASM_MOVE)
+#elif defined(WASM_NONHFI_USE_ASM_MOVE)
 
 #define DEFINE_LOAD DEFINE_NONHFI_ASM_LOAD
-#define DEFINE_LOAD DEFINE_NONHFI_ASM_STORE
+#define DEFINE_STORE DEFINE_NONHFI_ASM_STORE
 
 #else
 

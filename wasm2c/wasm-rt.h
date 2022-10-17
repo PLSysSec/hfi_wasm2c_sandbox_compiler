@@ -389,35 +389,51 @@ extern void wasm_rt_expand_table(wasm_rt_table_t*);
 #endif
 
 // HFI emulation requires the first 4gb for the wasm heap. This function reserves that range
-#define wasm_rt_hfi_emulate_reserve_lower4() {                                                       \
-  /* The region 0x0 to wasm_rt_hfi_emulate_reserve_lower4_start is reserved by the OS */             \
-  /* Start after that */                                                                             \
-  void* page_addr = (void*) wasm_rt_hfi_emulate_reserve_lower4_start();                              \
-  const uint64_t alloc_size = ((uint64_t) wasm_rt_hfi_emulate_reserve_lower4_end()) - wasm_rt_hfi_emulate_reserve_lower4_start(); \
-                                                                                                     \
-  void* allocated = 0;                                                                               \
-                                                                                                     \
-  for (int retry = 0; retry < 10; retry++) {                                                         \
-                                                                                                     \
-    allocated = mmap(                                                                                \
-      page_addr,                                                                                     \
-      alloc_size,                                                                                    \
-      PROT_READ | PROT_WRITE,                                                                        \
-      MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED_NOREPLACE,                                             \
-      -1, 0                                                                                          \
-    );                                                                                               \
-                                                                                                     \
-    if (allocated) {                                                                                 \
-      break;                                                                                         \
-    }                                                                                                \
-  }                                                                                                  \
-                                                                                                     \
-  int allocated_correct = allocated == page_addr;                                                    \
-                                                                                                     \
-  if(!allocated || !allocated_correct) {                                                             \
-    printf("Reserving lower 4GB failed!!!!!!!!!\n");                                                 \
-    abort();                                                                                         \
-  }                                                                                                  \
+#define wasm_rt_hfi_emulate_reserve_lower4() {                                                                  \
+  /* The region 0x0 to wasm_rt_hfi_emulate_reserve_lower4_start is reserved by the OS */                        \
+  /* Start after that */                                                                                        \
+  void* page_addr = (void*) wasm_rt_hfi_emulate_reserve_lower4_start();                                         \
+  const uint64_t alloc_size = ((uint64_t) wasm_rt_hfi_emulate_reserve_lower4_end()) -                           \
+    wasm_rt_hfi_emulate_reserve_lower4_start();                                                                 \
+                                                                                                                \
+  void* addr = 0;                                                                                               \
+  int mmap_fixed_flag = MAP_FIXED_NOREPLACE;                                                                    \
+                                                                                                                \
+  for (int retry = 0; retry < 10; retry++) {                                                                    \
+                                                                                                                \
+    addr = mmap(                                                                                                \
+      page_addr,                                                                                                \
+      alloc_size,                                                                                               \
+      PROT_READ | PROT_WRITE,                                                                                   \
+      MAP_ANONYMOUS | MAP_PRIVATE | mmap_fixed_flag,                                                            \
+      -1, 0                                                                                                     \
+    );                                                                                                          \
+                                                                                                                \
+    if (addr && addr != page_addr) {                                                                            \
+      if (mmap_fixed_flag == MAP_FIXED_NOREPLACE) {                                                             \
+        printf("Warning: Mismatched HFI_EMULATION mode address: Got %p, Expected %p. Switching to MAP_FIXED\n", \
+          addr, page_addr);                                                                                     \
+        mmap_fixed_flag = MAP_FIXED;                                                                            \
+        munmap(addr, alloc_size);                                                                               \
+        addr = NULL;                                                                                            \
+      } else {                                                                                                  \
+        printf("Error: Mismatched HFI_EMULATION mode address: Got %p, Expected %p. \n",                         \
+          addr, page_addr);                                                                                     \
+        abort();                                                                                                \
+      }                                                                                                         \
+    }                                                                                                           \
+                                                                                                                \
+    if (addr) {                                                                                                 \
+      break;                                                                                                    \
+    }                                                                                                           \
+  }                                                                                                             \
+                                                                                                                \
+  int allocated_correct = addr == page_addr;                                                                    \
+                                                                                                                \
+  if(!addr || !allocated_correct) {                                                                             \
+    printf("Reserving lower 4GB failed!!!!!!!!!\n");                                                            \
+    abort();                                                                                                    \
+  }                                                                                                             \
 }
 #endif
 

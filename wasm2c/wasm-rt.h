@@ -409,7 +409,7 @@ extern void wasm_rt_expand_table(wasm_rt_table_t*);
       -1, 0                                                                                                     \
     );                                                                                                          \
                                                                                                                 \
-    if (addr && addr != page_addr) {                                                                            \
+    if (addr && addr != ((void*) -1) && addr != page_addr) {                                                    \
       if (mmap_fixed_flag == MAP_FIXED_NOREPLACE) {                                                             \
         printf("Warning: Mismatched HFI_EMULATION mode address: Got %p, Expected %p. Switching to MAP_FIXED\n", \
           addr, page_addr);                                                                                     \
@@ -423,15 +423,19 @@ extern void wasm_rt_expand_table(wasm_rt_table_t*);
       }                                                                                                         \
     }                                                                                                           \
                                                                                                                 \
-    if (addr) {                                                                                                 \
+    if (addr && addr != ((void*) -1)) {                                                                         \
       break;                                                                                                    \
     }                                                                                                           \
   }                                                                                                             \
                                                                                                                 \
-  int allocated_correct = addr == page_addr;                                                                    \
-                                                                                                                \
-  if(!addr || !allocated_correct) {                                                                             \
+  if (!addr || addr == ((void*) -1)) {                                                                          \
     printf("Reserving lower 4GB failed!!!!!!!!!\n");                                                            \
+    abort();                                                                                                    \
+  }                                                                                                             \
+                                                                                                                \
+  int allocated_correct = addr == page_addr;                                                                    \
+  if(!allocated_correct) {                                                                                      \
+    printf("Reserving lower 4GB was incorrect!!!!!!!!!\n");                                                     \
     abort();                                                                                                    \
   }                                                                                                             \
 }

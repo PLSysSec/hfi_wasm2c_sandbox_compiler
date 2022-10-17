@@ -323,7 +323,7 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
 # ifdef HFI_EMULATION2
     addr =
         os_mmap((void*) hfi_emulate2_memory_start(), heap_reserve_size, prot_flags, mmap_fixed_flag);
-    if (addr && addr != (void*) hfi_emulate2_memory_start()) {
+    if (addr && addr != ((void*) -1) && addr != (void*) hfi_emulate2_memory_start()) {
       if (mmap_fixed_flag == MMAP_MAP_FIXED_NOREPLACE) {
         printf("Warning: Mismatched HFI_EMULATION2 mode address: Got %p, Expected %p. Switching to MAP_FIXED\n",
           addr, (void*) hfi_emulate2_memory_start());
@@ -341,7 +341,7 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
         os_mmap_aligned(NULL, heap_reserve_size, prot_flags, MMAP_MAP_NONE,
                         WASM_HEAP_ALIGNMENT, 0 /* alignment_offset */);
 #endif
-    if (addr) {
+    if (addr && addr != ((void*) -1)) {
       break;
     }
   }
@@ -349,7 +349,7 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
   memory->allocated_dummy = addr;
   addr = 0;
 #else
-  if (!addr) {
+  if (!addr || addr == ((void*) -1)) {                                                                          \
     os_print_last_error("os_mmap failed.");
     return false;
   }

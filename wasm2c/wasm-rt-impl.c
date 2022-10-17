@@ -322,7 +322,7 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
   for (uint64_t i = 0; i < retries; i++) {
 # ifdef HFI_EMULATION2
     addr =
-        os_mmap((void*) hfi_emulate2_memory_start(), heap_reserve_size, prot_flags, MMAP_MAP_FIXED_NOREPLACE);
+        os_mmap((void*) hfi_emulate2_memory_start(), heap_reserve_size, prot_flags, mmap_fixed_flag);
     if (addr && addr != (void*) hfi_emulate2_memory_start()) {
       if (mmap_fixed_flag == MMAP_MAP_FIXED_NOREPLACE) {
         printf("Warning: Mismatched HFI_EMULATION2 mode address: Got %p, Expected %p. Switching to MAP_FIXED\n",

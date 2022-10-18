@@ -137,8 +137,14 @@ static inline void load_data(void *dest, const void *src, size_t n) {
   WASM2C_SHADOW_MEMORY_STORE(&m, "GlobalDataLoad", o, s);       \
 }
 
+#ifdef HFI_USE_VOLATILE
+#define WASM2C_HFI_VOLATILE volatile
+#else
+#define WASM2C_HFI_VOLATILE
+#endif
+
 #define wasm2c_asmmov_load_anytype(base, offset, data)                                               \
-    asm("mov (%2, %1), %0\n"                                                                         \
+    asm WASM2C_HFI_VOLATILE("mov (%2, %1), %0\n"                                                     \
     : "=r"(data)                                                                                     \
     : "r"(offset), "r"(base)                                                                         \
     : "memory"                                                                                       \
@@ -146,7 +152,7 @@ static inline void load_data(void *dest, const void *src, size_t n) {
 
 
 #define wasm2c_asmmov_store_anytype(base, offset, data)                                              \
-    asm("mov %0, (%2, %1)\n"                                                                         \
+    asm WASM2C_HFI_VOLATILE("mov %0, (%2, %1)\n"                                                     \
     :                                                                                                \
     : "r"(data), "r"(offset), "r"(base)                                                              \
     : "memory"                                                                                       \

@@ -22,6 +22,27 @@ wasm2c_sandbox_funcs_t get_wasm2c_sandbox_info();
 void w2c__start(void* sbx);
 
 int main(int argc, char const* argv[]) {
+
+  if (argc < 2) {
+    printf("Expected %s <count>\n", argv[0]);
+    abort();
+  }
+
+  const char* countStr=argv[1];
+  unsigned long long count = 0;
+  sscanf(countStr, "%llu", &count);
+
+  if (count == 0) {
+    printf("Cannot use 0 repetition count\n");
+    abort();
+  }
+
+  // Splice the argv[1] arg out since it is a count
+  for (int move = 1; (move + 1) < argc; move++) {
+    argv[move] = argv[move+1];
+  }
+  argc--;
+
   #ifdef HFI_EMULATION
   wasm_rt_hfi_emulate_reserve_lower4();
   #endif
@@ -49,7 +70,11 @@ int main(int argc, char const* argv[]) {
 #endif
 
   sandbox_info.init_wasm2c_sandbox(sandbox);
-  w2c__start(sandbox);
+
+  // infinite loop if count is ullmax
+  for(unsigned long long i = 0; i < count; i++) {
+    w2c__start(sandbox);
+  }
 
 #ifdef WASM_USE_HFI
   wasm_rt_hfi_disable();

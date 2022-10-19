@@ -143,7 +143,7 @@ int main(int argc, char const* argv[]) {
 
 #ifndef WASM_NO_UVWASI
   uvwasi_t local_uvwasi_state;
-  init_uvwasi_local(&local_uvwasi_state, argc, argv);
+  init_uvwasi_local(&local_uvwasi_state, true /* mapRootSubdirs */, argc, argv);
   sandbox_info.init_uvwasi_state(sandbox, &local_uvwasi_state);
 #endif
 

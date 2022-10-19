@@ -33,7 +33,7 @@ static void addPreopenRootDir(uvwasi_preopen_t* preopens, const char* folder, lo
     }
 }
 
-void init_uvwasi_local(uvwasi_t * local_uvwasi_state, int argc, char const * argv[])
+void init_uvwasi_local(uvwasi_t * local_uvwasi_state, bool mapRootSubdirs, int argc, char const * argv[])
 {
     uvwasi_options_t init_options;
 
@@ -72,24 +72,26 @@ void init_uvwasi_local(uvwasi_t * local_uvwasi_state, int argc, char const * arg
 
     long curr_preopens_index = 2;
 
-    while ((dent = readdir(srcdir)) != NULL){
-        struct stat st;
+    if (mapRootSubdirs) {
+        while ((dent = readdir(srcdir)) != NULL){
+            struct stat st;
 
-        if(strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0) {
-            continue;
-        }
+            if(strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0) {
+                continue;
+            }
 
-        if (fstatat(dirfd(srcdir), dent->d_name, &st, 0) < 0) {
-            printf("Warning: could not fstat on: %s\n", dent->d_name);
-            continue;
-        }
+            if (fstatat(dirfd(srcdir), dent->d_name, &st, 0) < 0) {
+                printf("Warning: could not fstat on: %s\n", dent->d_name);
+                continue;
+            }
 
-        if (S_ISDIR(st.st_mode)) {
-            //printf("%s\n", dent->d_name);
-            addPreopenRootDir(init_options.preopens, dent->d_name, &curr_preopens_index, total_preopens);
+            if (S_ISDIR(st.st_mode)) {
+                //printf("%s\n", dent->d_name);
+                addPreopenRootDir(init_options.preopens, dent->d_name, &curr_preopens_index, total_preopens);
+            }
         }
+        closedir(srcdir);
     }
-    closedir(srcdir);
 
     init_options.preopenc = curr_preopens_index;
     init_options.allocator = NULL;

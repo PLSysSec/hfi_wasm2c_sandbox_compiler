@@ -64,11 +64,11 @@ extern "C" {
 // WASM_USE_HFI
 // WASM_USE_MASKING
 
-#if !defined(WASM_USE_GUARD_PAGES) && !defined(WASM_USE_BOUNDS_CHECKS) && !defined(WASM_USE_MASKING) && !defined(WASM_USE_HFI)
+#if !defined(WASM_USE_GUARD_PAGES) && !defined(WASM_USE_BOUNDS_CHECKS) && !defined(WASM_USE_MASKING) && !defined(WASM_USE_HFI) && !defined(WASM_USE_SEGMENT)
 
 #error "Must define one of [WASM_USE_GUARD_PAGES, WASM_USE_BOUNDS_CHECKS, WASM_USE_MASKING, WASM_USE_HFI]"
 
-#elif defined(WASM_USE_HFI) && (defined(WASM_USE_GUARD_PAGES) || defined(WASM_USE_BOUNDS_CHECKS) || defined(WASM_USE_MASKING))
+#elif defined(WASM_USE_HFI) && (defined(WASM_USE_GUARD_PAGES) || defined(WASM_USE_BOUNDS_CHECKS) || defined(WASM_USE_MASKING) || defined(WASM_USE_SEGMENT))
 
 #error "Cannot define multiple in [WASM_USE_GUARD_PAGES, WASM_USE_BOUNDS_CHECKS, WASM_USE_MASKING, WASM_USE_HFI]"
 

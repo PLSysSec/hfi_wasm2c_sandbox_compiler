@@ -389,6 +389,13 @@ bool wasm_rt_allocate_memory(wasm_rt_memory_t* memory,
   memory->pages = initial_pages;
   memory->max_pages = chosen_max_pages;
 
+#ifdef WASM_USE_SEGMENT
+  asm volatile("wrgsbase %0\n"
+    : /* writes */
+    : /* reads */  "r" (memory->data)
+  );
+#endif
+
 #if defined(WASM_CHECK_SHADOW_MEMORY)
   wasm2c_shadow_memory_create(memory);
 #endif

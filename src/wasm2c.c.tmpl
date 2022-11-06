@@ -122,6 +122,35 @@ void WASM2C_MALLOC_FAIL_CALLBACK(u32 ptr_size);
 #  define MEM_ACCESS_REF(mem, addr) &mem->data[addr]
 #endif
 
+#ifdef WASM_USE_SEGMENT
+#  ifndef __SEG_GS
+#    error "No segment support"
+#  endif
+
+#define MEMCPY_GS(TYPE)                                         \
+static __attribute__((always_inline)) inline                    \
+void memcpyfromgs_##TYPE(TYPE* target, u32 index) {             \
+  TYPE __seg_gs * source = (TYPE __seg_gs *) (uintptr_t) index; \
+  *target = *source;                                            \
+}                                                               \
+static __attribute__((always_inline)) inline                    \
+void memcpytogs_##TYPE(u32 index, TYPE* source) {               \
+  TYPE __seg_gs * target = (TYPE __seg_gs *) (uintptr_t) index; \
+  *target = *source;                                            \
+}
+
+MEMCPY_GS(u8);
+MEMCPY_GS(s8);
+MEMCPY_GS(u16);
+MEMCPY_GS(s16);
+MEMCPY_GS(u32);
+MEMCPY_GS(s32);
+MEMCPY_GS(u64);
+MEMCPY_GS(s64);
+MEMCPY_GS(f32);
+MEMCPY_GS(f64);
+
+#endif
 
 #if WABT_BIG_ENDIAN
 
@@ -214,6 +243,23 @@ static inline void load_data(void *dest, const void *src, size_t n) {
     WASM2C_SHADOW_MEMORY_STORE(mem, func_name, addr, sizeof(act_t));                                 \
     WASM2C_SHADOW_MEMORY_LOGSTORE(mem, func_name, addr, sizeof(act_t), wrapped);                     \
   }
+
+#define DEFINE_LOAD_GS(name, t1, t2, t3)                                            \
+  static inline t3 name(wasm_rt_memory_t* mem, u64 addr, const char* func_name) {   \
+    MEMCHECK(mem, addr, t1);                                                        \
+    t1 result;                                                                      \
+    memcpyfromgs_##t1(&result, addr);                                               \
+    WASM2C_SHADOW_MEMORY_LOAD(mem, func_name, addr, sizeof(t1));                    \
+    return (t3)(t2)result;                                                          \
+  }
+
+#define DEFINE_STORE_GS(name, t1, t2)                                                         \
+  static inline void name(wasm_rt_memory_t* mem, u64 addr, t2 value, const char* func_name) { \
+    MEMCHECK(mem, addr, t1);                                                                  \
+    t1 wrapped = (t1)value;                                                                   \
+    memcpytogs_##t1(addr, &wrapped);                                                          \
+    WASM2C_SHADOW_MEMORY_STORE(mem, func_name, addr, sizeof(t1));                             \
+  }
 #endif
 
 #ifdef WASM_USE_HFI
@@ -225,6 +271,11 @@ static inline void load_data(void *dest, const void *src, size_t n) {
 
 #define DEFINE_LOAD DEFINE_NONHFI_ASM_LOAD
 #define DEFINE_STORE DEFINE_NONHFI_ASM_STORE
+
+#elif defined(WASM_USE_SEGMENT)
+
+#define DEFINE_LOAD DEFINE_LOAD_GS
+#define DEFINE_STORE DEFINE_STORE_GS
 
 #else
 

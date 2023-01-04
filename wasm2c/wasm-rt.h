@@ -64,11 +64,11 @@ extern "C" {
 // WASM_USE_HFI
 // WASM_USE_MASKING
 
-#if !defined(WASM_USE_GUARD_PAGES) && !defined(WASM_USE_BOUNDS_CHECKS) && !defined(WASM_USE_MASKING) && !defined(WASM_USE_HFI) && !defined(WASM_USE_SEGMENT)
+#if !defined(WASM_USE_GUARD_PAGES) && !defined(WASM_USE_BOUNDS_CHECKS) && !defined(WASM_USE_MASKING) && !defined(WASM_USE_HFI) && !defined(WASM_USE_SEGMENT) && !defined(WASM_USE_CHERI)
 
-#error "Must define one of [WASM_USE_GUARD_PAGES, WASM_USE_BOUNDS_CHECKS, WASM_USE_MASKING, WASM_USE_HFI]"
+#error "Must define one of [WASM_USE_GUARD_PAGES, WASM_USE_BOUNDS_CHECKS, WASM_USE_MASKING, WASM_USE_HFI, WASM_USE_CHERI]"
 
-#elif defined(WASM_USE_HFI) && (defined(WASM_USE_GUARD_PAGES) || defined(WASM_USE_BOUNDS_CHECKS) || defined(WASM_USE_MASKING) || defined(WASM_USE_SEGMENT))
+#elif defined(WASM_USE_HFI) && (defined(WASM_USE_GUARD_PAGES) || defined(WASM_USE_BOUNDS_CHECKS) || defined(WASM_USE_MASKING) || defined(WASM_USE_SEGMENT) || defined(WASM_USE_CHERI))
 
 #error "Cannot define multiple in [WASM_USE_GUARD_PAGES, WASM_USE_BOUNDS_CHECKS, WASM_USE_MASKING, WASM_USE_HFI]"
 
@@ -175,10 +175,19 @@ typedef struct {
 /** A Memory object. */
 typedef struct {
   /** The linear memory data, with a byte length of `size`. */
-#ifdef WASM_USE_MALLOC_MOVABLE
-  uint8_t* data;
+#ifdef WASM_USE_CHERI
+  #include <cheriintrin.h>
+  #include <cheri.h>
+  uint8_t* __capability data;
+  #ifdef WASM_USE_MALLOC_MOVABLE
+    static_assert(false && "malloc_movable is not compatible with Cheri mode");
+  #endif
 #else
-  uint8_t* const data;
+  #ifdef WASM_USE_MALLOC_MOVABLE
+    uint8_t* data;
+  #else
+    uint8_t* const data;
+  #endif
 #endif
   /** The current and maximum page count for this Memory object. If there is no
    * maximum, `max_pages` is 0xffffffffu (i.e. UINT32_MAX). */
